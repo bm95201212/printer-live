@@ -1126,8 +1126,8 @@ function ttConnect(){
     if(!ttWant){ttStatus('Отключено');return;}
     if(c===4401||c===4403||c===4400){ttWant=false;ttStatus('❌ '+why+' — проверьте TikTok и ключ');return;}
     if(c===4005){ttWant=false;ttStatus('Эфир закончился');return;}
-    ttTry++;if(ttTry>40){ttWant=false;ttStatus('❌ Не удалось подключиться ('+why+')');return;}
-    const wait=c===4404?20000:6000;ttStatus((c===4404?'⏳ Эфир ещё не начат — ':'🔄 Переподключение — ')+'попытка '+ttTry+' через '+(wait/1000)+' с');
+    ttTry++;if(ttTry>(c===4404?20:40)){ttWant=false;ttStatus('❌ Не удалось подключиться ('+why+')');return;}
+    const wait=c===4404?30000:6000;   /* each try costs one Euler request (free plan: 500/hour) */ttStatus((c===4404?'⏳ Эфир ещё не начат — ':'🔄 Переподключение — ')+'попытка '+ttTry+' через '+(wait/1000)+' с');
     ttTO=setTimeout(()=>{if(ttWant)ttConnect();},wait);};
 }
 /* helpers: field names differ a little between schema versions, so read them carefully */

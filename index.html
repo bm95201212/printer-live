@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Принтер LIVE — макет игры для TikTok</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap&subset=cyrillic-ext" rel="stylesheet">
 <style>
@@ -1170,6 +1173,8 @@ function ttHandle(m){
   else if(t==='room.status'){ttLog('статус: '+((d&&d.state)||''));}
 }
 if(ttGet('ttUser'))ttStatus('Не подключено (@'+ttGet('ttUser')+')');
+/* own site only: install as a full-screen app (no browser bars on air) */
+try{if('serviceWorker' in navigator&&/github\.io$/.test(location.hostname))navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(_){}
 /* link mode for LIVE Studio «Ссылка»: …/printer-live/?u=USER&k=KEY#efir → saves the settings and connects by itself */
 {try{const q=new URLSearchParams(location.search),u=(q.get('u')||'').trim().replace(/^@/,''),k=(q.get('k')||'').trim();
   if(u&&k){ttSet('ttUser',u);ttSet('ttKey',k);ttWant=true;ttTry=0;setTimeout(ttConnect,800);}}catch(_){}}

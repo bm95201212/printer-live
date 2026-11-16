@@ -244,6 +244,8 @@ body.stream #sndmenu{right:auto;left:50%;transform:translateX(-50%);top:calc(env
       <label for="ttuser">Ваш TikTok (без @)</label><input id="ttuser" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="например: my_account">
       <label for="ttkey">Euler Stream API key</label><input id="ttkey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="вставьте ключ">
       <div class="row"><button class="go" id="ttgo">▶ Подключить</button><button class="stop" id="ttstop">■ Отключить</button></div>
+      <button id="ttcopy" style="width:100%;margin-top:10px;background:#3a5bff;border-color:#3a5bff">📋 Скопировать ссылку для LIVE Studio</button>
+      <input id="ttlink" readonly style="display:none;margin-top:8px;font-size:12px">
       <div id="ttst">Не подключено</div><div id="ttlog"></div>
       <div class="note">Сначала начните эфир в TikTok, потом нажмите «Подключить». Ключ хранится только в этом браузере на вашем телефоне. Кнопки подарков на экране продолжают работать для проверки.</div></div>
     <div id="gal"><h4><span>🖼 Галерея</span><button id="galx">✕ Закрыть</button></h4><div id="galg"><div class="e">Пока пусто — отправьте подарок и напечатайте первое фото</div></div></div>
@@ -1103,6 +1105,13 @@ function ttLog(t){ttLines.unshift(new Date().toLocaleTimeString().slice(0,8)+'  
 function ttOpen(){$('ttuser').value=ttGet('ttUser');$('ttkey').value=ttGet('ttKey');$('ttp').classList.add('open');}
 ['ttbtn','ctt'].forEach(id=>$(id).addEventListener('click',ttOpen));
 $('ttx').addEventListener('click',()=>$('ttp').classList.remove('open'));
+/* one tap: the ready link for LIVE Studio «Ссылка» (user + key inside), copied to the clipboard */
+$('ttcopy').addEventListener('click',()=>{const u=$('ttuser').value.trim().replace(/^@/,''),k=$('ttkey').value.trim();
+  if(!u||!k){ttStatus('Сначала введите TikTok и ключ');return;}ttSet('ttUser',u);ttSet('ttKey',k);
+  const link=location.origin+location.pathname+'?u='+encodeURIComponent(u)+'&k='+encodeURIComponent(k)+'#efir',f=$('ttlink');
+  f.value=link;f.style.display='block';f.select();
+  const ok=()=>ttStatus('✅ Ссылка скопирована — вставьте её в LIVE Studio (Ctrl+V)'),bad=()=>{try{document.execCommand('copy');ok();}catch(_){ttStatus('Выделите ссылку ниже и скопируйте (Ctrl+C)');}};
+  try{navigator.clipboard.writeText(link).then(ok,bad);}catch(_){bad();}});
 $('ttgo').addEventListener('click',()=>{const u=$('ttuser').value.trim().replace(/^@/,''),k=$('ttkey').value.trim();
   if(!u||!k){ttStatus('Введите TikTok и ключ');return;}ttSet('ttUser',u);ttSet('ttKey',k);ttWant=true;ttTry=0;ttConnect();});
 $('ttstop').addEventListener('click',()=>{ttWant=false;clearTimeout(ttTO);if(ttWs){try{ttWs.close(1000);}catch(_){}}ttWs=null;ttStatus('Отключено');ttLog('отключено вручную');});

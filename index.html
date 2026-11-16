@@ -1108,7 +1108,7 @@ $('ttx').addEventListener('click',()=>$('ttp').classList.remove('open'));
 /* one tap: the ready link for LIVE Studio «Ссылка» (user + key inside), copied to the clipboard */
 $('ttcopy').addEventListener('click',()=>{const u=$('ttuser').value.trim().replace(/^@/,''),k=$('ttkey').value.trim();
   if(!u||!k){ttStatus('Сначала введите TikTok и ключ');return;}ttSet('ttUser',u);ttSet('ttKey',k);
-  const link=location.origin+location.pathname+'?u='+encodeURIComponent(u)+'&k='+encodeURIComponent(k)+'#efir',f=$('ttlink');
+  const link=location.origin+location.pathname+'?u='+encodeURIComponent(u)+'&k='+encodeURIComponent(k)+'&efir=1#efir',f=$('ttlink');
   f.value=link;f.style.display='block';f.select();
   const ok=()=>ttStatus('✅ Ссылка скопирована — вставьте её в LIVE Studio (Ctrl+V)'),bad=()=>{try{document.execCommand('copy');ok();}catch(_){ttStatus('Выделите ссылку ниже и скопируйте (Ctrl+C)');}};
   try{navigator.clipboard.writeText(link).then(ok,bad);}catch(_){bad();}});
@@ -1202,7 +1202,7 @@ let ctrlTO;function showCtrl(){$('ctrl').classList.remove('hide');clearTimeout(c
 stage.addEventListener('pointerdown',showCtrl,true);
 /* ---------- start ---------- */
 function start(){
-  if(location.hash==='#efir')setStream(true);
+  if(location.hash==='#efir'||/[?&](u|efir)=/.test(location.search))setStream(true);   /* the LIVE Studio link may lose the #efir part */
   updUI();toast('👋 Нажмите на подарок — фото напечатается на бумаге');
   requestAnimationFrame(frame);
 }

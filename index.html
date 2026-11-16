@@ -185,6 +185,19 @@ body.stream #sndmenu{right:auto;left:50%;transform:translateX(-50%);top:calc(env
 #sndmenu .wr{font-size:9.5px;color:var(--mut)}
 #sndlist{display:flex;flex-direction:column;gap:5px}
 #sndlist button{background:rgba(255,255,255,.07);border:1px solid var(--line);color:#fff;font:700 12px Montserrat,sans-serif;padding:8px;border-radius:8px;text-align:left;cursor:pointer}
+#ttp{display:none;position:absolute;inset:0;z-index:9;background:rgba(7,7,13,.94);padding:16px 14px;overflow:auto;font-family:Montserrat,sans-serif}
+#ttp.open{display:block}
+#ttp h4{font-size:15px;font-weight:800;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+#ttp label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:12px 0 5px}
+#ttp input{width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid var(--line);color:#fff;font:600 15px Montserrat,sans-serif;padding:10px 11px;border-radius:9px}
+#ttp .row{display:flex;gap:8px;margin-top:14px}
+#ttp button{background:rgba(255,255,255,.1);border:1px solid var(--line);color:#fff;font:800 13px Montserrat,sans-serif;padding:10px 12px;border-radius:9px;cursor:pointer}
+#ttp button.go{background:#25c06d;border-color:#25c06d;flex:1}
+#ttp button.stop{background:#a8323e;border-color:#a8323e}
+#ttst{margin-top:14px;padding:10px 11px;border-radius:9px;background:rgba(255,255,255,.05);font-size:13px;font-weight:700;line-height:1.4}
+#ttlog{margin-top:10px;font-size:11px;color:var(--mut);line-height:1.5;white-space:pre-wrap;word-break:break-word}
+#ttp .note{font-size:11px;color:var(--mut);margin-top:12px;line-height:1.45}
+.live.tt{background:#25c06d}
 #gal{display:none;position:absolute;inset:0;z-index:8;background:rgba(7,7,13,.92);padding:14px 12px;overflow:auto}
 #gal.open{display:block}
 #gal h4{font-size:13px;font-weight:800;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
@@ -204,6 +217,7 @@ body.stream #sndmenu{right:auto;left:50%;transform:translateX(-50%);top:calc(env
     </div>
     <div class="sp"></div>
     <span class="pill coins" id="coins">🪙 0</span>
+    <button class="pill" id="ttbtn">🔗 TikTok</button>
     <button class="pill" id="like">❤ +50</button>
     <button class="pill" id="auto">Авто ▶</button>
     <span class="live"><i></i>LIVE</span>
@@ -216,7 +230,7 @@ body.stream #sndmenu{right:auto;left:50%;transform:translateX(-50%);top:calc(env
     <div class="board"><div class="bt">🏆 ТОП СПОНСОРОВ</div><div id="brows"><div class="bempty">Пока пусто — будь первым!</div></div></div>
     <div id="zoom"><button id="zin" aria-label="Приблизить">+</button><button id="zout" aria-label="Отдалить">−</button><button id="zgal" aria-label="Галерея">🖼</button><button id="zsnd" class="on" aria-label="Звук принтера">🔈</button><button id="ztts" aria-label="Голос">🔇</button><button id="zmus" aria-label="Музыка">🎵</button><button id="zsong" aria-label="Свои песни">📁</button></div>
     <div id="hint">☝ повернуть<br>✌ приблизить</div>
-    <div id="ctrl"><button id="cx" aria-label="Выход">✕</button><button id="cfs" aria-label="Полный экран">⛶</button><button id="csafe" aria-label="Вид TikTok">👁</button><button id="cgal">🖼</button><button id="csnd" class="on">🔈</button><button id="ctts">🔇</button><button id="cmus">🎵</button><button id="csong">📁</button><button id="cauto">Авто ▶</button></div>
+    <div id="ctrl"><button id="cx" aria-label="Выход">✕</button><button id="ctt">🔗</button><button id="cfs" aria-label="Полный экран">⛶</button><button id="csafe" aria-label="Вид TikTok">👁</button><button id="cgal">🖼</button><button id="csnd" class="on">🔈</button><button id="ctts">🔇</button><button id="cmus">🎵</button><button id="csong">📁</button><button id="cauto">Авто ▶</button></div>
     <div id="strip"></div>
     <div id="stask"><div class="sl"><span>🖨 Печатается</span></div><div class="now" id="snow">—</div><div class="sl"><span>⏳ Очередь</span><span id="sq">0</span></div><div class="q" id="sqn"></div><div class="sl"><span>🖼 Галерея</span><span id="sgt">0 / 20</span></div><div class="bar v"><i id="sgb"></i></div><div class="sl"><span>🎆 Салют</span><span id="sft">0</span></div><div class="bar"><i id="sfb"></i></div></div>
     <div id="sline"></div>
@@ -226,6 +240,12 @@ body.stream #sndmenu{right:auto;left:50%;transform:translateX(-50%);top:calc(env
     <div id="smenu"><div class="nm" id="sname">—</div><button id="snext">⏭ Следующая</button><button id="sadd">➕ Добавить песню</button><button id="sstop">⏹ Стоп</button><div class="wr">⚠️ Песни с авторскими правами могут заглушить в эфире</div></div>
     <div id="modemenu"><div class="nm">🖨 Способ печати — выберите вариант</div><div id="modelist"></div><div class="wr">После выбора сразу напечатается тестовая карточка</div></div>
     <div id="sndmenu"><div class="nm">🔈 Звук принтера — выберите вариант</div><div id="sndlist"></div><div class="wr">Нажмите вариант — он прозвучит 2 секунды</div></div>
+    <div id="ttp"><h4><span>🔗 Подключение к TikTok LIVE</span><button id="ttx">✕ Закрыть</button></h4>
+      <label for="ttuser">Ваш TikTok (без @)</label><input id="ttuser" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="например: my_account">
+      <label for="ttkey">Euler Stream API key</label><input id="ttkey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="вставьте ключ">
+      <div class="row"><button class="go" id="ttgo">▶ Подключить</button><button class="stop" id="ttstop">■ Отключить</button></div>
+      <div id="ttst">Не подключено</div><div id="ttlog"></div>
+      <div class="note">Сначала начните эфир в TikTok, потом нажмите «Подключить». Ключ хранится только в этом браузере на вашем телефоне. Кнопки подарков на экране продолжают работать для проверки.</div></div>
     <div id="gal"><h4><span>🖼 Галерея</span><button id="galx">✕ Закрыть</button></h4><div id="galg"><div class="e">Пока пусто — отправьте подарок и напечатайте первое фото</div></div></div>
     <input type="file" id="songfile" accept="audio/*" multiple hidden>
     <input type="file" id="photofile" accept="image/*" hidden>
@@ -482,7 +502,7 @@ const PAPER='#ece3c6';
 function paperBg(g,w,h){g.fillStyle=PAPER;g.fillRect(0,0,w,h);for(let i=0;i<2600;i++){g.fillStyle='rgba(120,100,70,'+(Math.random()*.05)+')';g.fillRect(Math.random()*w,Math.random()*h,1.5,1.5);}}
 function hashHue(s){let h=0;for(const ch of s)h=(h*31+ch.charCodeAt(0))%360;return h;}
 function initials(n){const t=n.replace(/[_\.@#0-9]+/g,' ').trim();return (t[0]||'?').toUpperCase();}
-const avatars={};                                   /* name -> uploaded photo (Image) */
+const avatars={},ttReal=new Set();   /* ttReal: names of real TikTok viewers (no demo photo for them) */                                   /* name -> uploaded photo (Image) */
 /* demo profile pictures (fictional people, pets, places); a real stream uses each viewer's TikTok photo */
 const avImg={};['woman','man_sun','cat','sunset','puppy','flowers','mountains','girl','coffee','man_laugh','horse'].forEach(n=>{const im=new Image();im.crossOrigin='anonymous';im.src='img/av_'+n+'.jpg';avImg[n]=im;});
 const AVF=['woman','flowers','girl','cat','sunset','puppy','coffee'],AVM=['man_sun','man_laugh','horse','mountains','coffee','puppy','sunset'];
@@ -490,7 +510,7 @@ const FEM=new Set(['Айгерім','Дана','Аружан','Мадина','Ә
 function demoAvatar(name){const h=hashHue(name+'#');if(h%6===0)return null;const pool=FEM.has(name)?AVF:AVM;const im=avImg[pool[h%pool.length]];return im&&im.complete&&im.naturalWidth?im:null;}
 function drawAvatar(g,cx,cy,r,name,gray){
   const t=document.createElement('canvas');t.width=t.height=Math.round(r*2);const a=t.getContext('2d'),R=r;
-  const img=avatars[name]||demoAvatar(name);
+  const img=avatars[name]||(ttReal.has(name)?null:demoAvatar(name));
   if(img){const s=Math.max(2*R/img.naturalWidth,2*R/img.naturalHeight),w=img.naturalWidth*s,h=img.naturalHeight*s;a.drawImage(img,R-w/2,R-h/2,w,h);}
   else{const hu=hashHue(name),gr=a.createLinearGradient(0,0,2*R,2*R);gr.addColorStop(0,'hsl('+hu+',70%,62%)');gr.addColorStop(1,'hsl('+((hu+50)%360)+',70%,38%)');a.fillStyle=gr;a.fillRect(0,0,2*R,2*R);
     a.fillStyle='rgba(255,255,255,.18)';a.beginPath();a.arc(R*.55,R*.45,R*.9,0,7);a.fill();
@@ -1072,6 +1092,75 @@ function toggleAuto(){
   tick();autoIv=setInterval(()=>{if(queue.length<8)tick();addLikes(null,20+Math.floor(Math.random()*60));if(Math.random()<.5)setTimeout(()=>chat(null,pick(CHAT_DEMO)),900);},2600);
 }
 $('auto').addEventListener('click',toggleAuto);$('cauto').addEventListener('click',toggleAuto);
+
+/* ---------- TikTok LIVE connection (Euler Stream WebSocket, JSON events) ---------- */
+/* works only on the own site (GitHub Pages); inside claude.ai outside connections are blocked */
+let ttWs=null,ttWant=false,ttTry=0,ttTO=null,ttStats={gift:0,like:0,follow:0,chat:0};const ttLines=[],ttStreak={};
+function ttGet(k){try{return localStorage.getItem(k)||'';}catch(_){return '';}}
+function ttSet(k,v){try{localStorage.setItem(k,v);}catch(_){}}
+function ttStatus(t,ok){$('ttst').textContent=t;document.querySelectorAll('.live').forEach(e=>e.classList.toggle('tt',!!ok));}
+function ttLog(t){ttLines.unshift(new Date().toLocaleTimeString().slice(0,8)+'  '+t);if(ttLines.length>8)ttLines.pop();$('ttlog').textContent=ttLines.join('\n')+'\n\nПодарки: '+ttStats.gift+' · Лайки: '+ttStats.like+' · Подписки: '+ttStats.follow+' · Чат: '+ttStats.chat;}
+function ttOpen(){$('ttuser').value=ttGet('ttUser');$('ttkey').value=ttGet('ttKey');$('ttp').classList.add('open');}
+['ttbtn','ctt'].forEach(id=>$(id).addEventListener('click',ttOpen));
+$('ttx').addEventListener('click',()=>$('ttp').classList.remove('open'));
+$('ttgo').addEventListener('click',()=>{const u=$('ttuser').value.trim().replace(/^@/,''),k=$('ttkey').value.trim();
+  if(!u||!k){ttStatus('Введите TikTok и ключ');return;}ttSet('ttUser',u);ttSet('ttKey',k);ttWant=true;ttTry=0;ttConnect();});
+$('ttstop').addEventListener('click',()=>{ttWant=false;clearTimeout(ttTO);if(ttWs){try{ttWs.close(1000);}catch(_){}}ttWs=null;ttStatus('Отключено');ttLog('отключено вручную');});
+function ttConnect(){
+  clearTimeout(ttTO);if(ttWs){try{ttWs.onclose=null;ttWs.close(1000);}catch(_){}ttWs=null;}
+  const u=ttGet('ttUser'),k=ttGet('ttKey');if(!u||!k)return;
+  ttStatus('Подключение к @'+u+' …');
+  let ws;try{ws=new WebSocket('wss://ws.eulerstream.com?uniqueId='+encodeURIComponent(u)+'&apiKey='+encodeURIComponent(k));}
+  catch(e){ttStatus('Ошибка: браузер не разрешил подключение');ttLog(String(e));return;}
+  ttWs=ws;
+  ws.onopen=()=>{ttTry=0;ttStatus('✅ Подключено к @'+u+' — ждём события',true);ttLog('соединение открыто');};
+  ws.onmessage=ev=>{
+    if(typeof ev.data!=='string'){ttLog('пришли двоичные данные — формат не JSON');return;}
+    let d;try{d=JSON.parse(ev.data);}catch(_){ttLog('не удалось прочитать сообщение');return;}
+    const list=Array.isArray(d&&d.messages)?d.messages:(d&&d.type?[d]:[]);
+    list.forEach(m=>{try{ttHandle(m);}catch(e){ttLog('ошибка в событии '+(m&&m.type)+': '+e.message);}});};
+  ws.onerror=()=>ttLog('ошибка соединения');
+  ws.onclose=e=>{ttWs=null;const c=e.code;
+    const why={4401:'неверный ключ',4403:'нет доступа',4404:'эфир не начат',4429:'слишком много подключений',4005:'эфир закончился',4400:'неверные данные',4006:'нет сообщений',4500:'TikTok закрыл соединение',4555:'время соединения истекло'}[c]||('код '+c);
+    ttLog('соединение закрыто: '+why);
+    if(!ttWant){ttStatus('Отключено');return;}
+    if(c===4401||c===4403||c===4400){ttWant=false;ttStatus('❌ '+why+' — проверьте TikTok и ключ');return;}
+    if(c===4005){ttWant=false;ttStatus('Эфир закончился');return;}
+    ttTry++;if(ttTry>40){ttWant=false;ttStatus('❌ Не удалось подключиться ('+why+')');return;}
+    const wait=c===4404?20000:6000;ttStatus((c===4404?'⏳ Эфир ещё не начат — ':'🔄 Переподключение — ')+'попытка '+ttTry+' через '+(wait/1000)+' с');
+    ttTO=setTimeout(()=>{if(ttWant)ttConnect();},wait);};
+}
+/* helpers: field names differ a little between schema versions, so read them carefully */
+function ttUser(u){u=u||{};const name=String(u.nickname||u.displayId||u.uniqueId||u.secUid||'Зритель').trim().slice(0,24)||'Зритель';
+  let url='';const pics=[u.avatarThumb,u.avatarMedium,u.avatarLarge,u.profilePicture];
+  for(const p of pics){if(!p)continue;const l=p.urlList||p.url||p.urls||p.url_list;if(Array.isArray(l)){url=l.find(x=>typeof x==='string'&&/^https:/.test(x)&&!/\.webp(\?|$)/i.test(x))||l.find(x=>typeof x==='string'&&/^https:/.test(x))||'';}if(url)break;}
+  return {name,url,id:String(u.userId||u.id||u.idStr||name)};}
+function ttAvatar(v){return new Promise(res=>{ttReal.add(v.name);if(avatars[v.name]||!v.url){res();return;}
+  const im=new Image();im.crossOrigin='anonymous';let done=false;const fin=ok=>{if(done)return;done=true;if(ok)avatars[v.name]=im;res();};
+  im.onload=()=>fin(im.naturalWidth>0);im.onerror=()=>fin(false);setTimeout(()=>fin(false),2500);im.src=v.url;});}
+function ttGiftOf(d){const g=d.gift||d.giftDetails||d.extendedGiftInfo||{};
+  const nm=String(g.name||g.giftName||d.giftName||'').toLowerCase(),dia=+(g.diamondCount||g.diamond_count||d.diamondCount||0);
+  if(/rose|роза/.test(nm))return GIFTS[0];if(/donut|пончик/.test(nm))return GIFTS[1];
+  if(dia>=100)return GIFTS[2];if(dia>=30)return GIFTS[1];return GIFTS[0];}
+function ttHandle(m){
+  const t=m.type,d=m.data||{};
+  if(t==='WebcastGiftMessage'){
+    const v=ttUser(d.user),g=ttGiftOf(d),key=v.id+'|'+(d.giftId||'')+'|'+(d.groupId||d.comboId||'');
+    /* a combo streak sends several updates, each with the running total: count only the new part; an old record (>8 s) is a new send */
+    const now=Date.now(),rec=ttStreak[key],prev=rec&&now-rec.t<8000?rec.n:0,cnt=Math.max(1,+(d.repeatCount||d.comboCount||1)),add=Math.min(20,cnt-prev);
+    if(d.repeatEnd===1||d.repeatEnd===true)delete ttStreak[key];else ttStreak[key]={n:Math.max(prev,cnt),t:now};
+    if(add<=0)return;ttStats.gift+=add;ttLog('🎁 '+v.name+': '+(((d.gift||{}).name)||g.name)+' ×'+add);
+    ttAvatar(v).then(()=>{for(let i=0;i<add;i++)setTimeout(()=>sendGift(g,v.name),i*160);});}
+  else if(t==='WebcastLikeMessage'){const v=ttUser(d.user),n=Math.max(1,+(d.count||d.likeCount||1));ttStats.like+=n;ttReal.add(v.name);addLikes(v.name,n);if(ttStats.like%200<n)ttLog('❤ лайков всего: '+ttStats.like);}
+  else if(t==='WebcastSocialMessage'){const v=ttUser(d.user),k=JSON.stringify((d.common&&d.common.displayText)||'')+' '+(d.action||'');
+    if(/follow/i.test(k)||d.action===1||d.action==='1'){ttStats.follow++;ttLog('➕ подписка: '+v.name);banner('➕ Спасибо за подписку, '+v.name+'!');}}
+  else if(t==='WebcastChatMessage'){const v=ttUser(d.user);ttStats.chat++;chat(v.name,String(d.comment||d.content||''));}
+  else if(t==='roomInfo'){ttLog('эфир найден');}
+  else if(t==='tiktok.connect'){ttStatus('✅ Подключено к эфиру @'+ttGet('ttUser'),true);ttLog('подключено к TikTok');}
+  else if(t==='tiktok.disconnect'){ttLog('TikTok отключился');}
+  else if(t==='room.status'){ttLog('статус: '+((d&&d.state)||''));}
+}
+if(ttGet('ttUser'))ttStatus('Не подключено (@'+ttGet('ttUser')+')');
 
 /* ---------- stream mode ---------- */
 function setStream(on){

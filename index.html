@@ -240,7 +240,7 @@ body.stream #sndmenu{right:auto;left:50%;transform:translateX(-50%);top:calc(env
     <div id="deck"><video id="firev" src="img/fire.mp4" autoplay muted loop playsinline preload="auto"></video><div class="glow"></div><div id="plist"></div></div>
     <div id="safe"><div class="z" style="left:0;right:0;top:0;height:12%">Шапка TikTok (имя, зрители)</div><div class="z" style="left:0;bottom:0;width:72%;height:34%">Комментарии и подарки</div><div class="z" style="right:0;bottom:0;width:20%;height:46%">Кнопки</div></div>
     <div id="thanks"><div class="t1" id="th1"></div><div class="t2" id="th2"></div></div>
-    <div id="smenu"><div class="nm" id="sname">—</div><button id="snext">⏭ Следующая</button><button id="sadd">➕ Добавить песню</button><button id="sstop">⏹ Стоп</button><div class="wr">⚠️ Песни с авторскими правами могут заглушить в эфире</div></div>
+    <div id="smenu"><div class="nm" id="sname">—</div><button id="snext">⏭ Следующая</button><button id="sadd">➕ Добавить песню</button><button id="sstop">⏹ Стоп</button><button id="sclear">🗑 Очистить список</button><div class="wr">⚠️ Песни с авторскими правами могут заглушить в эфире</div></div>
     <div id="modemenu"><div class="nm">🖨 Способ печати — выберите вариант</div><div id="modelist"></div><div class="wr">После выбора сразу напечатается тестовая карточка</div></div>
     <div id="sndmenu"><div class="nm">🔈 Звук принтера — выберите вариант</div><div id="sndlist"></div><div class="wr">Нажмите вариант — он прозвучит 2 секунды</div></div>
     <div id="ttp"><h4><span>🔗 Подключение к TikTok LIVE</span><button id="ttx">✕ Закрыть</button></h4>
@@ -770,13 +770,18 @@ function songBtn(){if(!songs.length){$('songfile').click();return;}$('smenu').cl
 $('zsong').addEventListener('click',songBtn);$('csong').addEventListener('click',songBtn);
 $('songfile').addEventListener('change',e=>{
   const fs=[...e.target.files].filter(f=>/^audio\//.test(f.type)||/\.(mp3|m4a|aac|ogg|wav|opus|flac)$/i.test(f.name));const start=songs.length;
-  fs.forEach(f=>songs.push({name:f.name.replace(/\.[^.]+$/,'').slice(0,40),url:URL.createObjectURL(f)}));
+  fs.forEach(f=>{const name=f.name.replace(/\.[^.]+$/,'').slice(0,40);songs.push({name,url:URL.createObjectURL(f)});songSave(name,f);});
   e.target.value='';if(!fs.length){banner('Аудиофайл не найден');return;}
   if(!songOn)playSong(start);else{updSongUI();banner('➕ '+fs.length+' песен добавлено');}
 });
 $('snext').addEventListener('click',()=>{songOn?playSong(songIdx+1):playSong(Math.max(0,songIdx));$('smenu').classList.remove('open');});
 $('sadd').addEventListener('click',()=>{$('smenu').classList.remove('open');$('songfile').click();});
 $('sstop').addEventListener('click',()=>{stopSong();$('smenu').classList.remove('open');});
+/* songs are kept in this browser (IndexedDB), so after a reload the list is still there; they play one after another in a loop */
+function songDB(){return new Promise((res,rej)=>{try{const r=indexedDB.open('printerSongs',1);r.onupgradeneeded=()=>r.result.createObjectStore('s',{autoIncrement:true});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e);}});}
+function songSave(name,blob){songDB().then(db=>{db.transaction('s','readwrite').objectStore('s').add({name,blob});}).catch(()=>{});}
+songDB().then(db=>{const q=db.transaction('s').objectStore('s').getAll();q.onsuccess=()=>{(q.result||[]).forEach(x=>{if(x&&x.blob)songs.push({name:x.name,url:URL.createObjectURL(x.blob)});});updSongUI();};}).catch(()=>{});
+$('sclear').addEventListener('click',()=>{stopSong(true);songs=[];songIdx=-1;songDB().then(db=>db.transaction('s','readwrite').objectStore('s').clear()).catch(()=>{});updSongUI();$('smenu').classList.remove('open');banner('Список песен очищен');});
 function songEnergy(){
   if(!songOn||!analyser)return null;analyser.getByteFrequencyData(anData);
   let b=0;for(let i=1;i<7;i++)b+=anData[i];b/=6*255;bassAvg+=(b-bassAvg)*.05;

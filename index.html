@@ -341,19 +341,19 @@ const stage=$('stage'), feed=$('feed');
 GIFTS.forEach(g=>{
   const b=document.createElement('button');b.className='gift';
   b.innerHTML='<span class="e">'+g.e+'</span><div><b>'+g.name+'</b><span class="c">'+g.cost+' монет</span><span class="d">'+g.desc+'</span></div>';
-  b.addEventListener('click',()=>{const n=$('who').value.trim();sendGift(g,n||null);});
+  b.addEventListener('click',()=>{if(!demoOk())return;const n=$('who').value.trim();sendGift(g,n||null);});
   $('gifts').appendChild(b);
 });
 {const b=document.createElement('button');b.className='gift';const g=MEGA_TEST;
   b.innerHTML='<span class="e">'+g.e+'</span><div><b>'+g.name+'</b><span class="c">'+g.cost+' монет</span><span class="d">'+g.desc+'</span></div>';
-  b.addEventListener('click',()=>{const n=$('who').value.trim();sendGift(g,n||null);});$('gifts').appendChild(b);}
+  b.addEventListener('click',()=>{if(!demoOk())return;const n=$('who').value.trim();sendGift(g,n||null);});$('gifts').appendChild(b);}
 [['🎄','Новогодняя рамка','тест: авто → вкл → выкл',function(){const nx={auto:'on',on:'off',off:'auto'}[nyMode()];try{localStorage.setItem('nyForce',nx);}catch(_){}banner('🎄 Новогодняя рамка: '+{auto:'авто (1 дек – 10 янв)',on:'включена',off:'выключена'}[nx]);}],['🔥','Двойная печать','тест: 2 минуты 1 роза = 2 фото',()=>hhStart()],['😴','Сон принтера','тест: принтер засыпает',()=>{sleepNow();}]].forEach(([e,n,d,f])=>{const b=document.createElement('button');b.className='gift';
   b.innerHTML='<span class="e">'+e+'</span><div><b>'+n+'</b><span class="d">'+d+'</span></div>';b.addEventListener('click',f);$('gifts').appendChild(b);});
 GIFTS.forEach(g=>{const c=document.createElement('button');c.className='chip';
   c.innerHTML='<span class="e">'+g.e+'</span><div><span class="c">'+g.cost+'</span><span class="l">'+SHORT[g.id]+'</span></div>';
-  c.addEventListener('click',()=>sendGift(g,null));$('strip').appendChild(c);});
+  c.addEventListener('click',()=>{if(demoOk())sendGift(g,null);});$('strip').appendChild(c);});
 const PLAB={rose:['Печать','Print'],donut:['Большое','Big'],gold:['Супер','Super']},PLABEL={get rose(){return tr(...PLAB.rose);},get donut(){return tr(...PLAB.donut);},get gold(){return tr(...PLAB.gold);}};
-GIFTS.forEach(g=>{const b=document.createElement('button');b.dataset.gid=g.id;if(g.id==='rose')b.id='prose';b.innerHTML='<span class="ic"><b>'+g.e+'</b><s>🪙'+g.cost+'</s></span><span class="l">'+PLABEL[g.id]+'</span>';b.addEventListener('click',()=>sendGift(g,null));$('plist').appendChild(b);});
+GIFTS.forEach(g=>{const b=document.createElement('button');b.dataset.gid=g.id;if(g.id==='rose')b.id='prose';b.innerHTML='<span class="ic"><b>'+g.e+'</b><s>🪙'+g.cost+'</s></span><span class="l">'+PLABEL[g.id]+'</span>';b.addEventListener('click',()=>{if(demoOk())sendGift(g,null);});$('plist').appendChild(b);});
 {const a=document.createElement('div');a.className='pinfo';a.id='comborow';$('plist').appendChild(a);
  const l=document.createElement('div');l.className='pinfo';l.id='likerow';l.style.cursor='pointer';l.innerHTML='❤ <b id="lk">0/500</b> = <b id="lkw"></b> 🎁<div class="lbar"><i id="lbar"></i></div>';$('plist').appendChild(l);}
 function applyLang(){
@@ -620,6 +620,15 @@ const PAPER='#ece3c6';
 function paperBg(g,w,h){g.fillStyle=PAPER;g.fillRect(0,0,w,h);for(let i=0;i<2600;i++){g.fillStyle='rgba(120,100,70,'+(Math.random()*.05)+')';g.fillRect(Math.random()*w,Math.random()*h,1.5,1.5);}}
 function hashHue(s){let h=0;for(const ch of s)h=(h*31+ch.charCodeAt(0))%360;return h;}
 function initials(n){const t=n.replace(/[_\.@#0-9]+/g,' ').trim();return (t[0]||'?').toUpperCase();}
+/* ttLive: real TikTok events are arriving. Then test inputs (panel taps, ❤ row, Авто, test buttons) are switched off, and the test data
+   made before the stream (demo names in likes, podium, queue) is wiped once, so free photos and the podium only use real viewers */
+let ttLive=false;
+function demoOk(){if(!ttLive)return true;if(!streamMode)banner('TikTok подключён — тестовые кнопки выключены');return false;}
+function ttGoLive(){if(ttLive)return;ttLive=true;
+  try{if(autoIv){clearInterval(autoIv);autoIv=null;setAutoUI(false);}}catch(_){}
+  likes=0;likers.length=0;Object.keys(scores).forEach(k=>delete scores[k]);leader=null;Object.keys(roseCnt).forEach(k=>delete roseCnt[k]);fireCoins=0;
+  for(let i=queue.length-1;i>=0;i--)if(!ttReal.has(queue[i].name))queue.splice(i,1);
+  try{updLikes();updBoard();updUI();}catch(_){}}
 const avatars={},ttReal=new Set();   /* ttReal: names of real TikTok viewers (no demo photo for them) */                                   /* name -> uploaded photo (Image) */
 /* demo profile pictures (fictional people, pets, places); a real stream uses each viewer's TikTok photo */
 const avImg={};['woman','man_sun','cat','sunset','puppy','flowers','mountains','girl','coffee','man_laugh','horse'].forEach(n=>{const im=new Image();im.crossOrigin='anonymous';im.src='img/av_'+n+'.jpg';avImg[n]=im;});
@@ -1103,11 +1112,11 @@ const COMBO_N=10,roseCnt={};
 const LIKE_GOAL=500;let likes=0;const likers=[];
 function addLikes(name,n){
   const who=name||pick(NAMES);likes+=n;const i=likers.indexOf(who);if(i>=0)likers.splice(i,1);likers.push(who);if(likers.length>40)likers.shift();
-  while(likes>=LIKE_GOAL){likes-=LIKE_GOAL;const w=pick(likers);banner(tr('❤ '+LIKE_GOAL+' лайков! Бесплатное фото: ','❤ '+LIKE_GOAL+' likes! Free photo: ')+w);setTimeout(()=>enqueue(w,Object.assign({},GIFTS[0],{free:true})),500);}
+  while(likes>=LIKE_GOAL){likes-=LIKE_GOAL;const real=ttLive?likers.filter(n=>ttReal.has(n)):likers,w=pick(real.length?real:likers);banner(tr('❤ '+LIKE_GOAL+' лайков! Бесплатное фото: ','❤ '+LIKE_GOAL+' likes! Free photo: ')+w);setTimeout(()=>enqueue(w,Object.assign({},GIFTS[0],{free:true})),500);}
   updLikes();try{likeFx(n);}catch(_){}
 }
 function updLikes(){const a=$('lk'),b=$('lbar');if(a)a.textContent=likes+'/'+LIKE_GOAL;if(b)b.style.width=Math.min(100,likes/LIKE_GOAL*100)+'%';}
-['like','likerow'].forEach(id=>$(id).addEventListener('click',()=>addLikes(null,50)));   /* test only: on TikTok the likes come by themselves */
+['like','likerow'].forEach(id=>$(id).addEventListener('click',()=>{if(demoOk())addLikes(null,50);}));   /* test only: on TikTok the likes come by themselves */
 
 /* ---------- camera ---------- */
 let yaw=0,yawT=0,zoomT=1,focusT=0,wantFocus=false;   /* after a VIP / SUPER VIP card is stamped the camera comes closer for a moment */
@@ -1274,6 +1283,7 @@ let autoIv=null;
 function setAutoUI(on){['auto','cauto'].forEach(id=>{const b=$(id);b.textContent=on?'Авто ■':'Авто ▶';b.classList.toggle('on',on);});}
 function toggleAuto(){
   if(autoIv){clearInterval(autoIv);autoIv=null;setAutoUI(false);return;}
+  if(!demoOk())return;
   setAutoUI(true);
   const W=[[0,.76],[1,.17],[2,.07]];
   const tick=()=>{let rr=Math.random(),idx=0;for(const [i,w] of W){if(rr<w){idx=i;break;}rr-=w;}const n=pick(NAMES);const k=idx===0&&Math.random()<.4?2+Math.floor(Math.random()*4):1;for(let i=0;i<k;i++)setTimeout(()=>sendGift(GIFTS[idx],n),i*180);};
@@ -1331,7 +1341,7 @@ $('ttcopy').addEventListener('click',()=>{const u=$('ttuser').value.trim().repla
   try{navigator.clipboard.writeText(link).then(ok,bad);}catch(_){bad();}});
 $('ttgo').addEventListener('click',()=>{const u=$('ttuser').value.trim().replace(/^@/,''),k=$('ttkey').value.trim();
   if(!u||!k){ttStatus('Введите TikTok и ключ');return;}ttSet('ttUser',u);ttSet('ttKey',k);ttWant=true;ttTry=0;ttConnect();});
-$('ttstop').addEventListener('click',()=>{ttWant=false;clearTimeout(ttTO);if(ttWs){try{ttWs.close(1000);}catch(_){}}ttWs=null;ttStatus('Отключено');ttLog('отключено вручную');});
+$('ttstop').addEventListener('click',()=>{ttWant=false;ttLive=false;clearTimeout(ttTO);if(ttWs){try{ttWs.close(1000);}catch(_){}}ttWs=null;ttStatus('Отключено');ttLog('отключено вручную');});
 function ttConnect(){
   clearTimeout(ttTO);if(ttWs){try{ttWs.onclose=null;ttWs.close(1000);}catch(_){}ttWs=null;}
   const u=ttGet('ttUser'),k=ttGet('ttKey');if(!u||!k)return;
@@ -1371,6 +1381,7 @@ function ttGiftOf(d){const g=d.gift||d.giftDetails||d.extendedGiftInfo||{};
   if(dia>=100)return GIFTS[2];if(dia>=30)return GIFTS[1];return GIFTS[0];}
 function ttHandle(m){
   const t=m.type,d=m.data||{};
+  if(/^Webcast(Gift|Like|Social|Chat)Message$/.test(t)||t==='roomInfo'||t==='tiktok.connect')ttGoLive();
   if(t==='WebcastGiftMessage'){
     const v=ttUser(d.user),g=ttGiftOf(d),key=v.id+'|'+(d.giftId||'')+'|'+(d.groupId||d.comboId||'');
     /* a combo streak sends several updates, each with the running total: count only the new part; an old record (>8 s) is a new send */

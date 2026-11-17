@@ -172,6 +172,20 @@ body.stream #deck.vid{background:#000}
 #plist .l{flex:1;background:rgba(255,255,255,.07);border-radius:6px;padding:4px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body.stream #sline{top:12.5%;left:8px;right:8px;background:none;border:0;padding:0;display:flex;justify-content:space-between;gap:6px;text-align:left;overflow:visible}
 #sline .pl{background:rgba(16,13,34,.78);border:1px solid rgba(255,207,90,.35);border-radius:9px;padding:3px 8px;max-width:48%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.stream #sline{align-items:flex-start}
+#sline .pr{align-items:flex-start}
+#sline .podium{display:flex;gap:3px;background:rgba(16,13,34,.72);border:1px solid rgba(255,207,90,.4);border-radius:10px;padding:4px 4px 3px}
+#sline .pc{width:50px;text-align:center;position:relative}
+#sline .pc .av{width:30px;height:30px;border-radius:50%;margin:0 auto;overflow:hidden;border:2px solid #cfd8e3;background:#3a3150;display:flex;align-items:center;justify-content:center;font:800 13px Montserrat,sans-serif;color:#fff}
+#sline .pc .av img{width:100%;height:100%;object-fit:cover;display:block}
+#sline .pc.r1 .av{border-color:#ffcf5a;box-shadow:0 0 8px rgba(255,207,90,.7)}
+#sline .pc.r3 .av{border-color:#d08a4a}
+#sline .pc.empty .av{opacity:.45;border-style:dashed}
+#sline .pc i{position:absolute;top:-5px;left:2px;font-style:normal;font-size:12px}
+#sline .pc b{display:block;font:800 8.5px Montserrat,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;margin-top:2px}
+#sline .pc s{display:block;text-decoration:none;font:800 8px Montserrat,sans-serif;color:var(--gold)}
+#sline .pc.up{animation:pcup .7s ease-out}
+@keyframes pcup{0%{transform:scale(1.5)}60%{transform:scale(.92)}100%{transform:scale(1)}}
 #sline .pr{display:flex;gap:5px}
 #sline .pr span{background:rgba(32,34,92,.85);border:1px solid rgba(140,150,255,.35);border-radius:9px;padding:3px 8px;white-space:nowrap}
 #modemenu{display:none;position:absolute;right:54px;top:8px;z-index:9;background:rgba(16,13,34,.96);border:1px solid var(--line);border-radius:12px;padding:8px;flex-direction:column;gap:6px;width:240px}
@@ -289,6 +303,8 @@ body.stream #sndmenu{right:auto;left:50%;transform:translateX(-50%);top:calc(env
 if(typeof THREE==='undefined'){document.getElementById('err').style.display='flex';return;}
 
 /* ---------- data ---------- */
+const MEGA_MIN=1000;   /* gifts of 1000+ coins (Lion, Universe…) print a golden poster with fireworks */
+const MEGA_TEST={id:'gold',e:'🦁',name:'Лев',cost:1000,mega:true,desc:'тест: золотой постер'};
 const GIFTS=[
  {id:'rose',e:'🌹',name:'Роза',cost:1,desc:'Маленькое фото'},
  {id:'donut',e:'🍩',name:'Пончик',cost:30,desc:'Большое фото'},
@@ -308,6 +324,9 @@ GIFTS.forEach(g=>{
   b.addEventListener('click',()=>{const n=$('who').value.trim();sendGift(g,n||null);});
   $('gifts').appendChild(b);
 });
+{const b=document.createElement('button');b.className='gift';const g=MEGA_TEST;
+  b.innerHTML='<span class="e">'+g.e+'</span><div><b>'+g.name+'</b><span class="c">'+g.cost+' монет</span><span class="d">'+g.desc+'</span></div>';
+  b.addEventListener('click',()=>{const n=$('who').value.trim();sendGift(g,n||null);});$('gifts').appendChild(b);}
 GIFTS.forEach(g=>{const c=document.createElement('button');c.className='chip';
   c.innerHTML='<span class="e">'+g.e+'</span><div><span class="c">'+g.cost+'</span><span class="l">'+SHORT[g.id]+'</span></div>';
   c.addEventListener('click',()=>sendGift(g,null));$('strip').appendChild(c);});
@@ -347,9 +366,18 @@ function updUI(){
   $('sft').textContent=fmt(fireCoins)+'/'+(FIRE_GOAL/1000)+'k';$('sfb').style.width=$('fbar').style.width;
   $('snow').textContent=job?job.g.e+' '+job.name:'—';
   $('sq').textContent=queue.length;
-  {const t=topNames()[0];$('sline').innerHTML='<span class="pl">'+(t?'👑 '+esc(t)+' · '+fmt(scores[t]):'👑 будь первым!')+'</span><span class="pr"><span>⏳ '+queue.length+'</span><span>Галерея '+(galCount%GAL_GOAL)+'/'+GAL_GOAL+'</span></span>';}
+  {$('sline').innerHTML=podiumHTML()+'<span class="pr"><span>⏳ '+queue.length+'</span><span>Галерея '+(galCount%GAL_GOAL)+'/'+GAL_GOAL+'</span></span>';}
   $('sqn').textContent=queue.length?queue.slice(0,3).map(j=>j.name).join(', ')+(queue.length>3?' …':''):'пусто — будь первым!';
 }
+/* «wall of honour»: top-3 sponsors as mini cards with their photos; a viewer who moves up pops */
+let podPrev=[];
+function avSrc(name){const im=avatars[name]||(ttReal.has(name)?null:demoAvatar(name));return im&&im.src?im.src:'';}
+function podiumHTML(){const top=topNames(),M=['🥇','🥈','🥉'];let h='<span class="podium">';
+  for(let i=0;i<3;i++){const n=top[i];
+    if(!n){h+='<span class="pc empty r'+(i+1)+'"><span class="av">?</span><i>'+M[i]+'</i><b>свободно</b><s>&nbsp;</s></span>';continue;}
+    const up=podPrev.indexOf(n)<0||podPrev.indexOf(n)>i,src=avSrc(n);
+    h+='<span class="pc r'+(i+1)+(up?' up':'')+'"><span class="av">'+(src?'<img src="'+esc(src)+'" alt="">':esc(initials(n)))+'</span><i>'+M[i]+'</i><b>'+esc(n)+'</b><s>'+fmt(scores[n])+'</s></span>';}
+  podPrev=top.slice();return h+'</span>';}
 let passTO;
 function bigMsg(a,b){$('pass1').textContent=a;$('pass2').textContent=b;const p=$('pass');p.classList.add('show');clearTimeout(passTO);passTO=setTimeout(()=>p.classList.remove('show'),2400);}
 
@@ -828,7 +856,7 @@ const MODES=[
  {name:'Широкие полосы — медленно',d:'мало широких полос, как большой плоттер',sB:5,fB:8},
  {name:'Сканер — вся ширина сразу',d:'головка стоит, линия печати едет вниз',scan:true}];
 let pm=2;   /* owner's choice: «Тонкие полосы — качественно» */
-let stamped=false,stampTxt='VIP',moveFrom=[0,0],idleT=0,parkZ=BED0-.06,parkX=-.47;
+let stamped=false,stampTxt='VIP',moveFrom=[0,0],idleT=0,parkZ=BED0-.06,parkX=.47;
 const queue=[];let job=null,phase='idle',phaseT=0,printDur=6,P=null,pz0=0,pz1=0,px0=0,pxw=.37,holdDur=1;
 const DUR={rose:1.8,heart:2,donut:2.8,gold:3.2,corgi:4};
 const isFull=g=>g.cost>=30;
@@ -850,6 +878,7 @@ function beginPrint(){
   try{paperFix();}catch(_){}
   const speed=1+Math.min(.5,queue.length*.1);printDur=DUR[job.g.id]/speed;
   if(isFull(job.g)){P=fullP;const g=P.can.getContext('2d');g.setTransform(PCW/768,0,0,PCW/768,0,0);drawCard(g,768,714,job.g.id,job.name,topNames()[0]===job.name);g.setTransform(1,0,0,1,0,0);
+    if(job.g.mega)megaPoster(P.can.getContext('2d'));
     P.m.position.set(0,P.m.position.y,BED0+LC/2);pz0=BED0;pz1=BED0+LC;px0=0;pxw=PW/2;P.nb=MODES[pm].fB||16;P.mode=pm;job.slot=-1;
     banner('🖨 Печатается: '+job.name+' '+job.g.e);}
   else{P=smallP;const free=[];slotsUsed.forEach((u,i)=>{if(!u)free.push(i);});const sl=pick(free);job.slot=sl;
@@ -862,6 +891,10 @@ function beginPrint(){
   P.m2.position.copy(P.m.position);P.tex.needsUpdate=true;P.m.visible=true;P.m2.visible=true;clip.constant=pz0;cBot.constant=pz0;cTop2.constant=-pz0;
   phase='move';phaseT=0;moveFrom=[gantry.position.z,head.position.x];updUI();
 }
+function megaPoster(g){const W=PCW,H=PCH;g.save();g.globalCompositeOperation='multiply';g.fillStyle='rgba(255,214,120,.42)';g.fillRect(0,0,W,H);g.restore();
+  g.save();const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,'#8a5a12');gr.addColorStop(.5,'#ffe08a');gr.addColorStop(1,'#a86d14');
+  g.strokeStyle=gr;g.lineWidth=W*.022;g.strokeRect(W*.018,H*.019,W*.964,H*.962);
+  g.fillStyle='#8a5a12';g.font='900 '+Math.round(W*.032)+'px Montserrat, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('★ ЛЕГЕНДА ★',W/2,H*.035);g.restore();}
 function addThumb(can){try{const t=document.createElement('canvas');t.width=180;t.height=Math.round(180*can.height/can.width);t.getContext('2d').drawImage(can,0,0,t.width,t.height);thumbs.unshift(t.toDataURL('image/jpeg',.8));if(thumbs.length>24)thumbs.pop();if($('gal').classList.contains('open'))renderGal();}catch(_){}}
 function finishPrint(){
   pFinish();
@@ -869,16 +902,17 @@ function finishPrint(){
   if(job.slot<0){g.drawImage(P.can,0,0);used=GC*GR;}
   else{g.drawImage(P.can,(job.slot%GC)*SW,Math.floor(job.slot/GC)*SH);slotsUsed[job.slot]=true;used++;}
   bakeBorder(job.rect);edges.forEach(m=>m.visible=false);
-  parkZ=BED0-.06;parkX=-.47;   /* like the reference: after each card the gantry goes back to the top, so the bar never hides the picture */
+  parkZ=BED0-.06;parkX=.47;   /* like the reference: after each card the gantry goes back to the top, so the bar never hides the picture */
   pageTex.needsUpdate=true;P.m.visible=false;P.m2.visible=false;clip.constant=100;
   sfx(job.g.cost>=100?'big':'gift');
   galCount++;addThumb(P.can);
   if(galCount%GAL_GOAL===0){banner('🎉 Задание дня выполнено: '+galCount+' фото!');salute();}
   if(isFull(job.g))confetti(0,BED0+LC/2,job.g.cost>=100?160:70,job.g.cost>=100?[0xffcf5a,0xffe9a6,0xffffff]:CONF);
   else confetti(px0,(pz0+pz1)/2,10);
-  if(job.g.cost>=100){bigMsg(job.name,job.g.id==='corgi'?'СПОНСОР ДНЯ! 👑':'золотое фото готово! ✨');setFocusCard(job.g.id==='corgi'?4.5:3.2);}
+  if(job.g.mega){bigMsg(job.name,'ЛЕГЕНДА! '+job.g.e+' золотой постер');salute();party=6;confetti(0,BED0+LC/2,260,[0xffcf5a,0xffe9a6,0xfff4cc]);}
+  else if(job.g.cost>=100){bigMsg(job.name,job.g.id==='corgi'?'СПОНСОР ДНЯ! 👑':'золотое фото готово! ✨');setFocusCard(job.g.id==='corgi'?4.5:3.2);}
   const big=job.g.cost>=100,lastG=job.g;job=null;
-  if(isFull(lastG)){const sp=big?ST_SUPER:ST_VIP;ST_TGT.x=sp[0];ST_TGT.z=sp[1];stampTxt=big?'SUPER VIP':'VIP';phase='stamp';phaseT=0;stamped=false;holdDur=big?2.4:1.6;}
+  if(isFull(lastG)){const sp=big?ST_SUPER:ST_VIP;ST_TGT.x=sp[0];ST_TGT.z=sp[1];stampTxt=lastG.mega?'ЛЕГЕНДА':big?'SUPER VIP':'VIP';phase='stamp';phaseT=0;stamped=false;holdDur=big?2.4:1.6;}
   else if(used>=GC*GR){phase='hold';phaseT=0;holdDur=1.2;}else phase='idle';
   updUI();
 }
@@ -912,6 +946,7 @@ function chat(name,text){
     if(job&&job.name===who)toast('🖨 <b>'+esc(who)+'</b>, твоё фото сейчас печатается!');
     else if(i>=0)toast('⏳ <b>'+esc(who)+'</b>, твоя очередь: '+(i+1));
     else toast('🎁 <b>'+esc(who)+'</b>, тебя нет в очереди — отправь 🌹, и твоё фото напечатается');}
+  else if(cmd==='!подписка')followSticker(who);   /* demo: test the follow sticker */
   else if(cmd==='!привет')toast('👋 Привет, <b>'+esc(who)+'</b>!');
 }
 function sendChatUI(t){chat($('who').value.trim()||null,t);}
@@ -1051,7 +1086,7 @@ function frame(){
   const dt=Math.min(.05,clock.getDelta());T+=dt;party=Math.max(0,party-dt);
   phaseT+=dt;
   /* between prints the head waits where it stopped; after a pause it goes back to its parking place */
-  idleT=phase==='idle'?idleT+dt:0;if(idleT>2.5){parkZ=BED0-.06;parkX=-.47;}
+  idleT=phase==='idle'?idleT+dt:0;if(idleT>2.5){parkZ=BED0-.06;parkX=.47;}
   let gz=parkZ,hx=parkX,mv=false,snap=false;
   if(phase==='idle'&&queue.length)startJob();
   if(phase==='move'){const k=Math.min(1,phaseT/.45),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;gz=moveFrom[0]+(job.rect.z0-moveFrom[0])*e;hx=moveFrom[1]+(job.rect.x1-moveFrom[1])*e;mv=true;
@@ -1099,6 +1134,7 @@ function frame(){
   else{const d=camDist*zoomT;lookGoal.set(0,0,streamMode?.086:-.05);posGoal.set(Math.sin(yaw)*d*.3,d*.6947,lookGoal.z+Math.cos(yaw)*d*.7193);}
   const kk=T<.2?1:Math.min(1,dt*2.2);camLook.lerp(lookGoal,kk);camPos.lerp(posGoal,kk);
   camera.position.copy(camPos);camera.lookAt(camLook);
+  updStickers(dt);
   renderer.render(scene,camera);
   requestAnimationFrame(frame);
 }
@@ -1111,9 +1147,29 @@ function toggleAuto(){
   setAutoUI(true);
   const W=[[0,.76],[1,.17],[2,.07]];
   const tick=()=>{let rr=Math.random(),idx=0;for(const [i,w] of W){if(rr<w){idx=i;break;}rr-=w;}const n=pick(NAMES);const k=idx===0&&Math.random()<.4?2+Math.floor(Math.random()*4):1;for(let i=0;i<k;i++)setTimeout(()=>sendGift(GIFTS[idx],n),i*180);};
-  tick();autoIv=setInterval(()=>{if(queue.length<8)tick();addLikes(null,20+Math.floor(Math.random()*60));if(Math.random()<.5)setTimeout(()=>chat(null,pick(CHAT_DEMO)),900);},2600);
+  tick();autoIv=setInterval(()=>{if(queue.length<8)tick();if(Math.random()<.12)followSticker(pick(NAMES));addLikes(null,20+Math.floor(Math.random()*60));if(Math.random()<.5)setTimeout(()=>chat(null,pick(CHAT_DEMO)),900);},2600);
 }
 $('auto').addEventListener('click',toggleAuto);$('cauto').addEventListener('click',toggleAuto);
+
+/* ---------- follow → a «thank you» sticker drops onto the paper and stays printed there ---------- */
+const stickers=[];
+function followSticker(name){banner('➕ Спасибо за подписку, '+name+'!');
+  const c=document.createElement('canvas');c.width=300;c.height=110;const a=c.getContext('2d');
+  a.fillStyle='#fff';a.beginPath();a.roundRect?a.roundRect(4,4,292,102,18):a.rect(4,4,292,102);a.fill();
+  const gr=a.createLinearGradient(0,0,300,0);gr.addColorStop(0,'#ff4f8b');gr.addColorStop(1,'#ffb347');a.fillStyle=gr;a.beginPath();a.roundRect?a.roundRect(11,11,278,88,13):a.rect(11,11,278,88);a.fill();
+  a.fillStyle='#fff';a.textAlign='center';a.textBaseline='middle';a.font='800 22px Montserrat, sans-serif';a.fillText('➕ Спасибо за подписку',150,38,264);
+  a.font='900 30px Montserrat, sans-serif';a.fillText(String(name).slice(0,18),150,74,264);
+  const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(.24,.088),new THREE.MeshBasicMaterial({map:tex,transparent:true}));
+  const side=Math.random()<.5?-1:1,x=side*(.2+Math.random()*.05),z=BED0+LC*(.07+Math.random()*.03),ang=side*(.12+Math.random()*.14);
+  m.rotation.set(-Math.PI/2,0,ang);m.position.set(x,Y0+.25,z);m.renderOrder=6;scene.add(m);
+  stickers.push({m,c,x,z,ang,t:0});}
+function updStickers(dt){for(let i=stickers.length-1;i>=0;i--){const st=stickers[i];
+    if(phase==='feed'){st.m.visible=false;continue;}st.m.visible=true;   /* wait while the paper is moving */
+    st.t+=dt;const k=Math.min(1,st.t/.45),e=1-Math.pow(1-k,3);st.m.position.y=Y0+.25-(.25-.004)*e;const sc=1.5-.5*e;st.m.scale.set(sc,sc,1);
+    if(k>=1&&st.t>.6){const g=pageCan.getContext('2d'),X=(st.x+PW/2)/PW*PCW,Zc=(st.z-BED0)/LC*PCH,w=.24/PW*PCW,h=.088/LC*PCH;
+      g.save();g.translate(X,Zc);g.rotate(-st.ang);g.drawImage(st.c,-w/2,-h/2,w,h);g.restore();pageTex.needsUpdate=true;
+      scene.remove(st.m);st.m.geometry.dispose();st.m.material.map.dispose();st.m.material.dispose();stickers.splice(i,1);}}}
 
 /* ---------- TikTok LIVE connection (Euler Stream WebSocket, JSON events) ---------- */
 /* works only on the own site (GitHub Pages); inside claude.ai outside connections are blocked */
@@ -1169,6 +1225,7 @@ function ttAvatar(v){return new Promise(res=>{ttReal.add(v.name);if(avatars[v.na
   im.onload=()=>fin(im.naturalWidth>0);im.onerror=()=>fin(false);setTimeout(()=>fin(false),2500);im.src=v.url;});}
 function ttGiftOf(d){const g=d.gift||d.giftDetails||d.extendedGiftInfo||{};
   const nm=String(g.name||g.giftName||d.giftName||'').toLowerCase(),dia=+(g.diamondCount||g.diamond_count||d.diamondCount||0);
+  if(dia>=MEGA_MIN)return Object.assign({},GIFTS[2],{mega:true,e:'🦁',name:String(g.name||g.giftName||'Мега-подарок'),cost:dia});
   if(/rose|роза/.test(nm))return GIFTS[0];if(/donut|пончик/.test(nm))return GIFTS[1];
   if(dia>=100)return GIFTS[2];if(dia>=30)return GIFTS[1];return GIFTS[0];}
 function ttHandle(m){
@@ -1182,7 +1239,7 @@ function ttHandle(m){
     ttAvatar(v).then(()=>{for(let i=0;i<add;i++)setTimeout(()=>sendGift(g,v.name),i*160);});}
   else if(t==='WebcastLikeMessage'){const v=ttUser(d.user),n=Math.max(1,+(d.count||d.likeCount||1));ttStats.like+=n;ttReal.add(v.name);addLikes(v.name,n);if(ttStats.like%200<n)ttLog('❤ лайков всего: '+ttStats.like);}
   else if(t==='WebcastSocialMessage'){const v=ttUser(d.user),k=JSON.stringify((d.common&&d.common.displayText)||'')+' '+(d.action||'');
-    if(/follow/i.test(k)||d.action===1||d.action==='1'){ttStats.follow++;ttLog('➕ подписка: '+v.name);banner('➕ Спасибо за подписку, '+v.name+'!');}}
+    if(/follow/i.test(k)||d.action===1||d.action==='1'){ttStats.follow++;ttLog('➕ подписка: '+v.name);followSticker(v.name);}}
   else if(t==='WebcastChatMessage'){const v=ttUser(d.user);ttStats.chat++;chat(v.name,String(d.comment||d.content||''));}
   else if(t==='roomInfo'){ttLog('эфир найден');}
   else if(t==='tiktok.connect'){ttStatus('✅ Подключено к эфиру @'+ttGet('ttUser'),true);ttLog('подключено к TikTok');}
@@ -1230,7 +1287,7 @@ function start(){
 }
 let started=false;const go=()=>{if(!started){started=true;start();}};
 if(document.fonts&&document.fonts.load){Promise.race([Promise.all([document.fonts.load('800 44px Montserrat','ПРИНТЕР ёйщъ Captain'),document.fonts.load('700 15px Montserrat','№0001')]),new Promise(r=>setTimeout(r,1500))]).then(go,go);}else go();
-window.__game={sendGift,GIFTS,queue,pageCan,stripCan,drawCard,drawSmall,get job(){return job;},get phase(){return phase;},get gal(){return galCount;},edges,head,gantry};
+window.__game={sendGift,GIFTS,queue,pageCan,stripCan,drawCard,drawSmall,get job(){return job;},get phase(){return phase;},get gal(){return galCount;},edges,head,gantry,followSticker,MEGA_TEST,get stickers(){return stickers.length;}};
 })();
 </script>
 </body>

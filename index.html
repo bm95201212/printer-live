@@ -180,6 +180,11 @@ body.stream #sline{top:12.5%;left:8px;right:8px;background:none;border:0;padding
 #sline .pl{background:rgba(16,13,34,.78);border:1px solid rgba(255,207,90,.35);border-radius:9px;padding:3px 8px;max-width:48%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 body.stream #sline{align-items:flex-start}
 #sline .pr{align-items:flex-start}
+#sline .goal{flex:0 1 25%;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(16,13,34,.72);border:1px solid rgba(255,207,90,.45);border-radius:9px;padding:3px 6px 4px;font:800 10px Montserrat,sans-serif;color:#fff;white-space:nowrap}
+#sline .goal b{font-size:10.5px;color:#ffe7a6}
+#sline .goal i{display:block;width:100%;height:5px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden}
+#sline .goal u{display:block;height:100%;background:linear-gradient(90deg,#ff7a2a,#ffd36a);transition:width .4s}
+#sline .goal s{text-decoration:none;font-size:9.5px;color:#ffd36a}
 #sline .podium{display:flex;gap:3px;background:rgba(16,13,34,.72);border:1px solid rgba(255,207,90,.4);border-radius:10px;padding:4px 4px 3px}
 #sline .pc{width:50px;text-align:center;position:relative}
 #sline .pc .av{width:30px;height:30px;border-radius:50%;margin:0 auto;overflow:hidden;border:2px solid #cfd8e3;background:#3a3150;display:flex;align-items:center;justify-content:center;font:800 13px Montserrat,sans-serif;color:#fff}
@@ -374,7 +379,7 @@ function updUI(){
   $('sft').textContent=fmt(fireCoins)+'/'+(FIRE_GOAL/1000)+'k';$('sfb').style.width=$('fbar').style.width;
   $('snow').textContent=job?job.g.e+' '+job.name:'—';
   $('sq').textContent=queue.length;
-  {$('sline').innerHTML=podiumHTML()+'<span class="pr"><span>⏳ Очередь: '+queue.length+'</span></span>';}   /* viewers see only the queue; the gallery counter is for the owner (panel) */
+  {$('sline').innerHTML=podiumHTML()+'<span class="goal"><b>🎆 Салют</b><i><u style="width:'+Math.min(100,fireCoins/FIRE_GOAL*100).toFixed(1)+'%"></u></i><s>'+fmt(fireCoins)+' / '+fmt(FIRE_GOAL)+'</s></span><span class="pr"><span>⏳ Очередь: '+queue.length+'</span></span>';}   /* viewers see only the queue; the gallery counter is for the owner (panel) */
   $('sqn').textContent=queue.length?queue.slice(0,3).map(j=>j.name).join(', ')+(queue.length>3?' …':''):'пусто — будь первым!';
 }
 /* «wall of honour»: top-3 sponsors as mini cards with their photos; a viewer who moves up pops */
@@ -465,6 +470,24 @@ const printer=new THREE.Group();scene.add(printer);
       bolt(printer,sd*.58-.025,.131,z-.025,1.2);bolt(printer,sd*.58+.025,.131,z+.025,1.2);
       const f=new THREE.Mesh(new THREE.CylinderGeometry(.03,.032,.006,20),rubber);f.position.set(sd*.58,.003,z);printer.add(f);});
     const r=new THREE.Mesh(new THREE.CylinderGeometry(.021,.021,1.16,28),chrome);r.rotation.x=Math.PI/2;r.position.set(sd*.58,.1,-.38);r.castShadow=true;printer.add(r);});}
+const toyDuck=new THREE.Group(),duckHead=new THREE.Group();
+{const yel=new THREE.MeshStandardMaterial({color:0xffd23f,roughness:.35,metalness:0,emissive:0x5a4200,emissiveIntensity:.35});
+  const ora=new THREE.MeshStandardMaterial({color:0xff8a1c,roughness:.4,emissive:0x4a1800,emissiveIntensity:.3});
+  const blk=new THREE.MeshStandardMaterial({color:0x111111,roughness:.2});const wht=new THREE.MeshBasicMaterial({color:0xffffff});
+  const body=new THREE.Mesh(new THREE.SphereGeometry(.045,28,20),yel);body.scale.set(1.3,.82,1);body.position.y=.037;body.castShadow=true;toyDuck.add(body);
+  const tail=new THREE.Mesh(new THREE.ConeGeometry(.02,.04,16),yel);tail.position.set(-.058,.058,0);tail.rotation.z=.9;toyDuck.add(tail);
+  [-1,1].forEach(sd=>{const w=new THREE.Mesh(new THREE.SphereGeometry(.022,16,12),yel);w.scale.set(1.4,.7,.5);w.position.set(-.008,.045,sd*.04);toyDuck.add(w);});
+  duckHead.position.set(.03,.07,0);toyDuck.add(duckHead);
+  const hd=new THREE.Mesh(new THREE.SphereGeometry(.03,24,18),yel);hd.position.set(.004,.024,0);hd.castShadow=true;duckHead.add(hd);
+  const bk=new THREE.Mesh(new THREE.SphereGeometry(.016,16,10),ora);bk.scale.set(1.5,.45,1);bk.position.set(.036,.018,0);duckHead.add(bk);
+  [-1,1].forEach(sd=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.0058,12,10),blk);e.position.set(.022,.034,sd*.02);duckHead.add(e);
+    const hl=new THREE.Mesh(new THREE.SphereGeometry(.0018,8,6),wht);hl.position.set(.026,.037,sd*.0215);duckHead.add(hl);});
+  toyDuck.position.set(.12,.13,-.99);toyDuck.rotation.y=-.75;toyDuck.scale.set(1.15,1.15,1.15);printer.add(toyDuck);}
+let duckHop=0;
+function updDuck(dt){duckHop=Math.max(0,duckHop-dt);const k=duckHop>0?1-duckHop/.7:0,sl=typeof sleeping!=='undefined'&&sleeping;
+  toyDuck.position.y=.13+(duckHop>0?Math.sin(k*Math.PI)*.035:sl?0:Math.abs(Math.sin(T*1.6))*.002);
+  toyDuck.rotation.z=duckHop>0?Math.sin(k*Math.PI*2)*.25:0;
+  duckHead.rotation.z+=((sl?-.55:duckHop>0?.25:Math.sin(T*.9)*.06)-duckHead.rotation.z)*Math.min(1,dt*5);}
 const gantry=new THREE.Group();printer.add(gantry);
 const BELT_Y=.13;
 {[0,-.048].forEach(z=>{const bar=new THREE.Mesh(new THREE.CylinderGeometry(.017,.017,1.2,28),chrome);bar.rotation.z=Math.PI/2;bar.position.set(0,.1,z);bar.castShadow=true;gantry.add(bar);});
@@ -1008,7 +1031,7 @@ function sendGift(g,name){
   if(fireCoins>=FIRE_GOAL){fireCoins-=FIRE_GOAL;banner('🎆 САЛЮТ-ШОУ! Спасибо, зрители!');salute();party=6;}
   const who=name||pick(NAMES);
   toast(g.e+' <b>'+esc(who)+'</b> — '+g.name+' ('+g.cost+')');
-  lastGiftT=T;const woke=sleeping;if(woke)wakeUp(who,g);
+  lastGiftT=T;duckHop=.7;const woke=sleeping;if(woke)wakeUp(who,g);
   enqueue(who,woke&&g.id==='rose'?Object.assign({},GIFTS[1],{free:true}):g);
   if(hhLeft>0&&g.id==='rose'&&!woke)setTimeout(()=>enqueue(who,Object.assign({},g,{free:true})),250);
   scores[who]=(scores[who]||0)+g.cost;updBoard(who);updUI();
@@ -1199,7 +1222,7 @@ function frame(){
   else{const d=camDist*zoomT;lookGoal.set(0,0,streamMode?.086:-.05);posGoal.set(Math.sin(yaw)*d*.3,d*.6947,lookGoal.z+Math.cos(yaw)*d*.7193);}
   const kk=T<.2?1:Math.min(1,dt*2.2);camLook.lerp(lookGoal,kk);camPos.lerp(posGoal,kk);
   camera.position.copy(camPos);camera.lookAt(camLook);
-  updStickers(dt);
+  updStickers(dt);updDuck(dt);
   renderer.render(scene,camera);
   requestAnimationFrame(frame);
 }

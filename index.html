@@ -166,6 +166,9 @@ body.stream #deck.vid{background:#000}
 #plist .pinfo b{color:#fff}
 #plist .lbar{height:4px;border-radius:3px;background:rgba(255,255,255,.12);margin-top:3px;overflow:hidden}
 #plist .lbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff3b6b,#ff9db5);transition:width .3s}
+#plist button.x2{border-color:#ffd36a;box-shadow:0 0 10px rgba(255,190,60,.75);animation:x2p 1s ease-in-out infinite alternate}
+#plist button.x2 .l{background:linear-gradient(90deg,#b8860b,#ffcf4a);color:#2a1a00}
+@keyframes x2p{from{box-shadow:0 0 4px rgba(255,190,60,.5)}to{box-shadow:0 0 14px rgba(255,190,60,.95)}}
 #plist .ic{width:28px;text-align:center;line-height:1}
 #plist .ic b{display:block;font-size:24px}
 #plist .ic s{display:block;text-decoration:none;font-size:9px;color:var(--gold);font-weight:800;margin-top:1px}
@@ -327,11 +330,13 @@ GIFTS.forEach(g=>{
 {const b=document.createElement('button');b.className='gift';const g=MEGA_TEST;
   b.innerHTML='<span class="e">'+g.e+'</span><div><b>'+g.name+'</b><span class="c">'+g.cost+' монет</span><span class="d">'+g.desc+'</span></div>';
   b.addEventListener('click',()=>{const n=$('who').value.trim();sendGift(g,n||null);});$('gifts').appendChild(b);}
+[['🔥','Двойная печать','тест: 2 минуты 1 роза = 2 фото',()=>hhStart()],['😴','Сон принтера','тест: принтер засыпает',()=>{sleepNow();}]].forEach(([e,n,d,f])=>{const b=document.createElement('button');b.className='gift';
+  b.innerHTML='<span class="e">'+e+'</span><div><b>'+n+'</b><span class="d">'+d+'</span></div>';b.addEventListener('click',f);$('gifts').appendChild(b);});
 GIFTS.forEach(g=>{const c=document.createElement('button');c.className='chip';
   c.innerHTML='<span class="e">'+g.e+'</span><div><span class="c">'+g.cost+'</span><span class="l">'+SHORT[g.id]+'</span></div>';
   c.addEventListener('click',()=>sendGift(g,null));$('strip').appendChild(c);});
 const PLABEL={rose:'Печать',donut:'Большое',gold:'Супер'};
-GIFTS.forEach(g=>{const b=document.createElement('button');b.innerHTML='<span class="ic"><b>'+g.e+'</b><s>🪙'+g.cost+'</s></span><span class="l">'+PLABEL[g.id]+'</span>';b.addEventListener('click',()=>sendGift(g,null));$('plist').appendChild(b);});
+GIFTS.forEach(g=>{const b=document.createElement('button');if(g.id==='rose')b.id='prose';b.innerHTML='<span class="ic"><b>'+g.e+'</b><s>🪙'+g.cost+'</s></span><span class="l">'+PLABEL[g.id]+'</span>';b.addEventListener('click',()=>sendGift(g,null));$('plist').appendChild(b);});
 {const a=document.createElement('div');a.className='pinfo';a.innerHTML='10 🌹 = <b>Большое</b> 🎁';$('plist').appendChild(a);
  const l=document.createElement('div');l.className='pinfo';l.id='likerow';l.style.cursor='pointer';l.innerHTML='❤ <b id="lk">0/1000</b> = <b>фото</b> 🎁<div class="lbar"><i id="lbar"></i></div>';$('plist').appendChild(l);}
 /* fire video: the whole fire sits in the free left part of the deck (the price list covers the right 47%) */
@@ -966,13 +971,30 @@ function sendGift(g,name){
   if(fireCoins>=FIRE_GOAL){fireCoins-=FIRE_GOAL;banner('🎆 САЛЮТ-ШОУ! Спасибо, зрители!');salute();party=6;}
   const who=name||pick(NAMES);
   toast(g.e+' <b>'+esc(who)+'</b> — '+g.name+' ('+g.cost+')');
-  enqueue(who,g);
+  lastGiftT=T;const woke=sleeping;if(woke)wakeUp(who,g);
+  enqueue(who,woke&&g.id==='rose'?Object.assign({},GIFTS[1],{free:true}):g);
+  if(hhLeft>0&&g.id==='rose'&&!woke)setTimeout(()=>enqueue(who,Object.assign({},g,{free:true})),250);
   scores[who]=(scores[who]||0)+g.cost;updBoard(who);updUI();
   thanks(who,g);sayGift(who,g);if(phase==='idle')sfx(g.cost>=100?'big':g.id==='rose'?'rose':'gift');
   if(g.id==='rose'){roseCnt[who]=(roseCnt[who]||0)+1;const c=roseCnt[who];
     if(c>=COMBO_N){roseCnt[who]=0;setTimeout(()=>{banner('🎁 '+who+': 10 роз — Большое фото в подарок!');enqueue(who,Object.assign({},GIFTS[1],{free:true}));},400);}
     else if(c>=5)toast('🌹 <b>'+esc(who)+'</b>: '+c+' / '+COMBO_N+' до бесплатного Большого фото');}
 }
+/* ---------- happy hour: now and then, for 2 minutes one rose prints two photos (only a glow on the rose row, no extra text on screen) ---------- */
+const HH_LEN=120;let hhLeft=0,hhNext=360+Math.random()*240;
+function hhStart(){hhLeft=HH_LEN;banner('🔥 Двойная печать! 2 минуты: 1 🌹 = 2 фото');hhUI();}
+function hhUI(){const b=$('prose');if(!b)return;const on=hhLeft>0;b.classList.toggle('x2',on);
+  b.querySelector('.l').textContent=on?'×2 · '+Math.floor(hhLeft/60)+':'+String(Math.floor(hhLeft%60)).padStart(2,'0'):PLABEL.rose;}
+function hhTick(dt){
+  if(hhLeft>0){const s0=Math.floor(hhLeft);hhLeft=Math.max(0,hhLeft-dt);if(Math.floor(hhLeft)!==s0||hhLeft<=0)hhUI();if(hhLeft<=0)hhNext=600+Math.random()*240;}
+  else if(!sleeping){hhNext-=dt;if(hhNext<=0)hhStart();}}
+/* ---------- sleep: 3 minutes without gifts -> the printer dozes (its light breathes slowly); the first gift wakes it, a rose then prints as a big card ---------- */
+const SLEEP_AFTER=180;let lastGiftT=0,sleeping=false,wakeT=0;
+function sleepNow(){if(phase==='idle'&&!queue.length){sleeping=true;lastGiftT=-1e9;}}
+function sleepTick(){if(!sleeping&&phase==='idle'&&!queue.length&&T-lastGiftT>SLEEP_AFTER)sleeping=true;}
+function wakeUp(who,g){sleeping=false;wakeT=1.2;lastGiftT=T;
+  bigMsg('⚡ Принтер проснулся!',g.id==='rose'?who+' — Большое фото в подарок':who+' разбудил принтер');
+  const x=head.position.x,z=gantry.position.z;for(let i=0;i<40;i++){const a=Math.random()*Math.PI*2,sp=.25+Math.random()*.5;emit(x,Y0+.12,z,Math.cos(a)*sp,.3+Math.random()*.5,Math.sin(a)*sp,pick([0xffd36a,0x37e0ff,0xffffff]),.7,1.3);}}
 /* ---------- combo: 10 roses from one viewer = free big card ---------- */
 const COMBO_N=10,roseCnt={};
 /* ---------- likes meter: every 1000 likes a random liker gets a free photo ---------- */
@@ -1125,8 +1147,12 @@ function frame(){
   if(snap){gantry.position.z=gz;head.position.x=hx;}
   else{gantry.position.z+=(gz-gantry.position.z)*Math.min(1,dt*(mv?30:4));head.position.x+=(hx-head.position.x)*Math.min(1,dt*(mv?40:4));}
   pAudioFrame(dt,head.position.x);
-  {const on=phase==='print'||phase==='move'||phase==='top'||phase==='frame',hu=head.userData;hu.torch.intensity+=((on?2.6:1.2)-hu.torch.intensity)*Math.min(1,dt*6);hu.pool.material.opacity+=((on?.55:.25)-hu.pool.material.opacity)*Math.min(1,dt*6);}
-  head.userData.led.material.color.setHex(phase==='print'?(job&&job.g.cost>=100?0xffd36a:0x37e0ff):0x1d6b7a);
+  sleepTick();hhTick(dt);wakeT=Math.max(0,wakeT-dt);
+  {const on=phase==='print'||phase==='move'||phase==='top'||phase==='frame',hu=head.userData,br=.5+.5*Math.sin(T*1.5);
+    let tI=on?2.6:1.2,pO=on?.55:.25;if(sleeping){tI=.15+.55*br;pO=.04+.14*br;}if(wakeT>0){tI=3.4;pO=.75;}
+    hu.torch.intensity+=(tI-hu.torch.intensity)*Math.min(1,dt*6);hu.pool.material.opacity+=(pO-hu.pool.material.opacity)*Math.min(1,dt*6);
+    if(sleeping)hu.led.material.color.setRGB(.08+.92*br,.03+.42*br,.01);
+    else hu.led.material.color.setHex(wakeT>0?0xffffff:phase==='print'?(job&&job.g.cost>=100?0xffd36a:0x37e0ff):0x1d6b7a);}
   if(party>0&&Math.random()<dt*6)confetti((Math.random()-.5)*1.2,-.3-Math.random()*.6,8);
   updParticles(dt);
   /* camera: overhead view of the printer; closer look at gold prints */
@@ -1297,7 +1323,7 @@ function start(){
 }
 let started=false;const go=()=>{if(!started){started=true;start();}};
 if(document.fonts&&document.fonts.load){Promise.race([Promise.all([document.fonts.load('800 44px Montserrat','ПРИНТЕР ёйщъ Captain'),document.fonts.load('700 15px Montserrat','№0001')]),new Promise(r=>setTimeout(r,1500))]).then(go,go);}else go();
-window.__game={sendGift,GIFTS,queue,pageCan,stripCan,drawCard,drawSmall,get job(){return job;},get phase(){return phase;},get gal(){return galCount;},edges,head,gantry,followSticker,MEGA_TEST,get stickers(){return stickers.length;}};
+window.__game={sendGift,GIFTS,queue,pageCan,stripCan,drawCard,drawSmall,get job(){return job;},get phase(){return phase;},get gal(){return galCount;},edges,head,gantry,followSticker,MEGA_TEST,get stickers(){return stickers.length;},hhStart,sleepNow,get hh(){return hhLeft;},get sleeping(){return sleeping;}};
 })();
 </script>
 </body>

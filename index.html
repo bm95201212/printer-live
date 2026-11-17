@@ -655,7 +655,7 @@ blankStrip();paperBg(pageCan.getContext('2d'),PCW,PCH);pageTex.needsUpdate=true;
    Repaint blank paper when that happens: on the browser's restore event and as a check before each print. */
 function paperLost(c){try{return c.getContext('2d').getImageData(3,3,1,1).data[3]===0;}catch(_){return false;}}
 function paperFix(){let fixed=false;
-  if(paperLost(pageCan)){paperBg(pageCan.getContext('2d'),PCW,PCH);pageTex.needsUpdate=true;slotsUsed.fill(false);used=0;fixed=true;}
+  if(paperLost(pageCan)){paperBg(pageCan.getContext('2d'),PCW,PCH);pageStickers.length=0;pageTex.needsUpdate=true;slotsUsed.fill(false);used=0;fixed=true;}
   if(paperLost(stripCan)){blankStrip();fixed=true;}
   return fixed;}
 [pageCan,stripCan].forEach(c=>c.addEventListener('contextrestored',()=>setTimeout(paperFix,0)));
@@ -664,7 +664,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout
 function startFeed(){
   pFeedStart();
   const g=stripCan.getContext('2d');g.drawImage(pageCan,0,0,CW,CH);stripTex.offset.y=0;stripTex.needsUpdate=true;
-  paperBg(pageCan.getContext('2d'),PCW,PCH);pageTex.needsUpdate=true;pageMesh.visible=false;
+  paperBg(pageCan.getContext('2d'),PCW,PCH);pageStickers.length=0;pageTex.needsUpdate=true;pageMesh.visible=false;
   phase='feed';phaseT=0;
 }
 function endFeed(){
@@ -902,6 +902,7 @@ function finishPrint(){
   if(job.slot<0){g.drawImage(P.can,0,0);used=GC*GR;}
   else{g.drawImage(P.can,(job.slot%GC)*SW,Math.floor(job.slot/GC)*SH);slotsUsed[job.slot]=true;used++;}
   bakeBorder(job.rect);edges.forEach(m=>m.visible=false);
+  drawPageStickers(g);   /* a sticker stays on top of cards printed later */
   parkZ=BED0-.06;parkX=.47;   /* like the reference: after each card the gantry goes back to the top, so the bar never hides the picture */
   pageTex.needsUpdate=true;P.m.visible=false;P.m2.visible=false;clip.constant=100;
   sfx(job.g.cost>=100?'big':'gift');
@@ -1152,7 +1153,8 @@ function toggleAuto(){
 $('auto').addEventListener('click',toggleAuto);$('cauto').addEventListener('click',toggleAuto);
 
 /* ---------- follow → a «thank you» sticker drops onto the paper and stays printed there ---------- */
-const stickers=[];
+const stickers=[],pageStickers=[];   /* pageStickers: stickers already on the current page; redrawn on top after every new card */
+function drawPageStickers(g){pageStickers.forEach(p=>{g.save();g.translate(p.X,p.Z);g.rotate(-p.ang);g.drawImage(p.c,-p.w/2,-p.h/2,p.w,p.h);g.restore();});}
 function followSticker(name){banner('➕ Спасибо за подписку, '+name+'!');
   const c=document.createElement('canvas');c.width=600;c.height=220;const a=c.getContext('2d');
   a.fillStyle='#fff';a.beginPath();a.roundRect?a.roundRect(6,6,588,208,34):a.rect(6,6,588,208);a.fill();
@@ -1168,7 +1170,7 @@ function updStickers(dt){for(let i=stickers.length-1;i>=0;i--){const st=stickers
     if(phase==='feed'){st.m.visible=false;continue;}st.m.visible=true;   /* wait while the paper is moving */
     st.t+=dt;const k=Math.min(1,st.t/.45),e=1-Math.pow(1-k,3);st.m.position.y=Y0+.25-(.25-.004)*e;const sc=1.5-.5*e;st.m.scale.set(sc,sc,1);
     if(k>=1&&st.t>.6){const g=pageCan.getContext('2d'),X=(st.x+PW/2)/PW*PCW,Zc=(st.z-BED0)/LC*PCH,w=.40/PW*PCW,h=.147/LC*PCH;
-      g.save();g.translate(X,Zc);g.rotate(-st.ang);g.drawImage(st.c,-w/2,-h/2,w,h);g.restore();pageTex.needsUpdate=true;
+      pageStickers.push({c:st.c,X,Z:Zc,w,h,ang:st.ang});drawPageStickers(g);pageTex.needsUpdate=true;
       scene.remove(st.m);st.m.geometry.dispose();st.m.material.map.dispose();st.m.material.dispose();stickers.splice(i,1);}}}
 
 /* ---------- TikTok LIVE connection (Euler Stream WebSocket, JSON events) ---------- */

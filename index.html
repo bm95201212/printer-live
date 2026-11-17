@@ -258,9 +258,9 @@ body.stream #sndmenu{right:auto;left:50%;transform:translateX(-50%);top:calc(env
     <div id="banner"></div>
     <div id="pass"><div class="p1" id="pass1"></div><div class="p2" id="pass2"></div></div>
     <div class="board"><div class="bt">🏆 ТОП СПОНСОРОВ</div><div id="brows"><div class="bempty">Пока пусто — будь первым!</div></div></div>
-    <div id="zoom"><button id="zin" aria-label="Приблизить">+</button><button id="zout" aria-label="Отдалить">−</button><button id="zgal" aria-label="Галерея">🖼</button><button id="zsnd" class="on" aria-label="Звук принтера">🔈</button><button id="ztts" aria-label="Голос">🔇</button><button id="zmus" aria-label="Музыка">🎵</button><button id="zsong" aria-label="Свои песни">📁</button></div>
+    <div id="zoom"><button id="zin" aria-label="Приблизить">+</button><button id="zout" aria-label="Отдалить">−</button><button id="zgal" aria-label="Галерея">🖼</button><button id="zsnd" class="on" aria-label="Звук принтера">🔈</button><button id="ztts" aria-label="Голос">🔇</button><button id="zmus" aria-label="Музыка">🎵</button><button id="zsong" aria-label="Свои песни">📁</button><button id="zlang" aria-label="Язык">RU</button></div>
     <div id="hint">☝ повернуть<br>✌ приблизить</div>
-    <div id="ctrl"><button id="cx" aria-label="Выход">✕</button><button id="ctt">🔗</button><button id="cfs" aria-label="Полный экран">⛶</button><button id="csafe" aria-label="Вид TikTok">👁</button><button id="cgal">🖼</button><button id="csnd" class="on">🔈</button><button id="ctts">🔇</button><button id="cmus">🎵</button><button id="csong">📁</button><button id="cauto">Авто ▶</button></div>
+    <div id="ctrl"><button id="cx" aria-label="Выход">✕</button><button id="ctt">🔗</button><button id="cfs" aria-label="Полный экран">⛶</button><button id="csafe" aria-label="Вид TikTok">👁</button><button id="cgal">🖼</button><button id="csnd" class="on">🔈</button><button id="ctts">🔇</button><button id="cmus">🎵</button><button id="csong">📁</button><button id="clang">RU</button><button id="cauto">Авто ▶</button></div>
     <div id="strip"></div>
     <div id="stask"><div class="sl"><span>🖨 Печатается</span></div><div class="now" id="snow">—</div><div class="sl"><span>⏳ Очередь</span><span id="sq">0</span></div><div class="q" id="sqn"></div><div class="sl"><span>🖼 Галерея</span><span id="sgt">0 / 20</span></div><div class="bar v"><i id="sgb"></i></div><div class="sl"><span>🎆 Салют</span><span id="sft">0</span></div><div class="bar"><i id="sfb"></i></div></div>
     <div id="sline"></div>
@@ -315,6 +315,10 @@ if(typeof THREE==='undefined'){document.getElementById('err').style.display='fle
 
 /* ---------- data ---------- */
 const MEGA_MIN=1000;   /* gifts of 1000+ coins (Lion, Universe…) print a golden poster with fireworks */
+/* viewer language: RU / EN, switched by the owner with the RU/EN button (one stream = one picture for everybody) */
+let LANG=(()=>{try{return localStorage.getItem('lang')==='en'?'en':'ru';}catch(_){return 'ru';}})();
+const tr=(ru,en)=>LANG==='en'?en:ru;
+const gname=g=>g.mega?g.name:({rose:tr('Роза','Rose'),donut:tr('Пончик','Donut'),gold:tr('Алмаз','Diamond')}[g.id]||g.name);
 const MEGA_TEST={id:'gold',e:'🦁',name:'Лев',cost:1000,mega:true,desc:'тест: золотой постер'};
 const GIFTS=[
  {id:'rose',e:'🌹',name:'Роза',cost:1,desc:'Маленькое фото'},
@@ -343,10 +347,18 @@ GIFTS.forEach(g=>{
 GIFTS.forEach(g=>{const c=document.createElement('button');c.className='chip';
   c.innerHTML='<span class="e">'+g.e+'</span><div><span class="c">'+g.cost+'</span><span class="l">'+SHORT[g.id]+'</span></div>';
   c.addEventListener('click',()=>sendGift(g,null));$('strip').appendChild(c);});
-const PLABEL={rose:'Печать',donut:'Большое',gold:'Супер'};
-GIFTS.forEach(g=>{const b=document.createElement('button');if(g.id==='rose')b.id='prose';b.innerHTML='<span class="ic"><b>'+g.e+'</b><s>🪙'+g.cost+'</s></span><span class="l">'+PLABEL[g.id]+'</span>';b.addEventListener('click',()=>sendGift(g,null));$('plist').appendChild(b);});
-{const a=document.createElement('div');a.className='pinfo';a.innerHTML='10 🌹 = <b>Большое</b> 🎁';$('plist').appendChild(a);
- const l=document.createElement('div');l.className='pinfo';l.id='likerow';l.style.cursor='pointer';l.innerHTML='❤ <b id="lk">0/1000</b> = <b>фото</b> 🎁<div class="lbar"><i id="lbar"></i></div>';$('plist').appendChild(l);}
+const PLAB={rose:['Печать','Print'],donut:['Большое','Big'],gold:['Супер','Super']},PLABEL={get rose(){return tr(...PLAB.rose);},get donut(){return tr(...PLAB.donut);},get gold(){return tr(...PLAB.gold);}};
+GIFTS.forEach(g=>{const b=document.createElement('button');b.dataset.gid=g.id;if(g.id==='rose')b.id='prose';b.innerHTML='<span class="ic"><b>'+g.e+'</b><s>🪙'+g.cost+'</s></span><span class="l">'+PLABEL[g.id]+'</span>';b.addEventListener('click',()=>sendGift(g,null));$('plist').appendChild(b);});
+{const a=document.createElement('div');a.className='pinfo';a.id='comborow';$('plist').appendChild(a);
+ const l=document.createElement('div');l.className='pinfo';l.id='likerow';l.style.cursor='pointer';l.innerHTML='❤ <b id="lk">0/1000</b> = <b id="lkw"></b> 🎁<div class="lbar"><i id="lbar"></i></div>';$('plist').appendChild(l);}
+function applyLang(){
+  ['clang','zlang'].forEach(id=>{const b=$(id);if(b)b.textContent=LANG.toUpperCase();});
+  document.querySelectorAll('#plist button[data-gid]').forEach(b=>{if(b.id!=='prose'||!b.classList.contains('x2'))b.querySelector('.l').textContent=PLABEL[b.dataset.gid];});
+  $('comborow').innerHTML='10 🌹 = <b>'+tr('Большое','Big photo')+'</b> 🎁';$('lkw').textContent=tr('фото','photo');
+  try{pickVoice();}catch(_){}try{updUI();}catch(_){}
+}
+function setLang(l){LANG=l;try{localStorage.setItem('lang',l);}catch(_){}applyLang();banner(l==='en'?'🌐 English for viewers':'🌐 Русский для зрителей');}
+['clang','zlang'].forEach(id=>$(id).addEventListener('click',()=>setLang(LANG==='en'?'ru':'en')));
 /* fire video: the whole fire sits in the free left part of the deck (the price list covers the right 47%) */
 function fitFire(){const d=$('deck'),v=$('firev'),w=d.clientWidth,h=d.clientHeight;if(!w||!h)return;
   const s=Math.min(w*1.0,h*1.0);   /* like the reference: the fire fills the whole deck, centred; flames span x 90..580 of the 720px video, centre at 0.465 */
@@ -379,7 +391,7 @@ function updUI(){
   $('sft').textContent=fmt(fireCoins)+'/'+fmt(FIRE_GOAL);$('sfb').style.width=$('fbar').style.width;
   $('snow').textContent=job?job.g.e+' '+job.name:'—';
   $('sq').textContent=queue.length;
-  {$('sline').innerHTML=podiumHTML()+'<span class="goal"><b>🎆 Салют</b><i><u style="width:'+Math.min(100,fireCoins/FIRE_GOAL*100).toFixed(1)+'%"></u></i><s>'+fmt(fireCoins)+' / '+fmt(FIRE_GOAL)+'</s></span><span class="pr"><span>⏳ Очередь: '+queue.length+'</span></span>';}   /* viewers see only the queue; the gallery counter is for the owner (panel) */
+  {$('sline').innerHTML=podiumHTML()+'<span class="goal"><b>'+tr('🎆 Салют','🎆 Fireworks')+'</b><i><u style="width:'+Math.min(100,fireCoins/FIRE_GOAL*100).toFixed(1)+'%"></u></i><s>'+fmt(fireCoins)+' / '+fmt(FIRE_GOAL)+'</s></span><span class="pr"><span>⏳ '+tr('Очередь','Queue')+': '+queue.length+'</span></span>';}   /* viewers see only the queue; the gallery counter is for the owner (panel) */
   $('sqn').textContent=queue.length?queue.slice(0,3).map(j=>j.name).join(', ')+(queue.length>3?' …':''):'пусто — будь первым!';
 }
 /* «wall of honour»: top-3 sponsors as mini cards with their photos; a viewer who moves up pops */
@@ -387,7 +399,7 @@ let podPrev=[];
 function avSrc(name){const im=avatars[name]||(ttReal.has(name)?null:demoAvatar(name));return im&&im.src?im.src:'';}
 function podiumHTML(){const top=topNames(),M=['🥇','🥈','🥉'];let h='<span class="podium">';
   for(let i=0;i<3;i++){const n=top[i];
-    if(!n){h+='<span class="pc empty r'+(i+1)+'"><span class="av">?</span><i>'+M[i]+'</i><b>свободно</b><s>&nbsp;</s></span>';continue;}
+    if(!n){h+='<span class="pc empty r'+(i+1)+'"><span class="av">?</span><i>'+M[i]+'</i><b>'+tr('свободно','free')+'</b><s>&nbsp;</s></span>';continue;}
     const up=podPrev.indexOf(n)<0||podPrev.indexOf(n)>i,src=avSrc(n);
     h+='<span class="pc r'+(i+1)+(up?' up':'')+'"><span class="av">'+(src?'<img src="'+esc(src)+'" alt="">':esc(initials(n)))+'</span><i>'+M[i]+'</i><b>'+esc(n)+'</b><s>'+fmt(scores[n])+'</s></span>';}
   podPrev=top.slice();return h+'</span>';}
@@ -657,7 +669,7 @@ function framedCard(g,w,h,tier,name){
   g.drawImage(im,left,top,1024*k,1024*k);
   const ny=h*.905;
   if(tier==='donut'){heart(g,150,ny-34,58,'rgba(240,150,150,.35)');g.save();g.strokeStyle='rgba(214,96,110,.85)';g.lineWidth=3;g.translate(150,ny-34);g.scale(58/30,58/30);g.beginPath();g.moveTo(0,10);g.bezierCurveTo(-22,-6,-12,-24,0,-12);g.bezierCurveTo(12,-24,22,-6,0,10);g.restore();g.stroke();
-    g.font='italic 600 34px Georgia, "Times New Roman", serif';g.fillStyle='#c2525f';g.textAlign='center';g.textBaseline='middle';g.fillText('спасибо!',150,ny+4);
+    g.font='italic 600 34px Georgia, "Times New Roman", serif';g.fillStyle='#c2525f';g.textAlign='center';g.textBaseline='middle';g.fillText(tr('спасибо!','thank you!'),150,ny+4);
     const tw=nameFit2(g,name,w/2+4,ny-4,40,'#141414',320).w;if(tw<=230)heart(g,w/2+tw/2+26,ny,22,'#e57373');}
   else{const nx=w/2,mw=300,tw=nameFit2(g,name,nx,ny-4,42,'#141414',mw).w;if(tw<=190)[-1,1].forEach(d=>heart(g,nx+d*(tw/2+28),ny,22,'#e57373'));}   /* name shifted left: SUPER VIP stamp sits bottom-right */
 }
@@ -690,8 +702,8 @@ function drawCard(g,w,h,tier,name,top){
   g.lineWidth=tier==='donut'?10:8;g.strokeStyle=tier==='gold'||tier==='corgi'?goldGrad(g,cx-r,cy-r,cx+r,cy+r):'#111';g.beginPath();g.arc(cx,cy,r+4,0,Math.PI*2);g.stroke();
   /* name */
   const ny=h*.82;
-  if(tier==='corgi'){nameText(g,'СПОНСОР ДНЯ',cx,ny-62,30,goldGrad(g,cx-150,0,cx+150,0),fw-80);}
-  if(tier==='gold'){nameText(g,top?'ТОП 1 · ЗОЛОТОЙ СПОНСОР':'ЗОЛОТОЙ СПОНСОР',cx,ny-58,26,'#9a6a14',fw-80);}
+  if(tier==='corgi'){nameText(g,tr('СПОНСОР ДНЯ','SPONSOR OF THE DAY'),cx,ny-62,30,goldGrad(g,cx-150,0,cx+150,0),fw-80);}
+  if(tier==='gold'){nameText(g,top?tr('ТОП 1 · ЗОЛОТОЙ СПОНСОР','TOP 1 · GOLDEN SPONSOR'):tr('ЗОЛОТОЙ СПОНСОР','GOLDEN SPONSOR'),cx,ny-58,26,'#9a6a14',fw-80);}
   if(tier==='donut'&&top){nameText(g,'★ ТОП 1 ★',cx,ny-56,26,'#b71c1c',fw-80);}
   const nf=tier==='rose'||tier==='heart'?50:56;
   const nc=tier==='corgi'?goldGrad(g,cx-200,0,cx+200,0):tier==='gold'?'#7a4f0a':'#141414';
@@ -754,27 +766,27 @@ function nextThanks(){
   const it=thQ.shift();const el=$('thanks');
   if(!it){thBusy=false;el.classList.remove('show');return;}
   thBusy=true;const big=it.g.cost>=100;
-  $('th1').textContent=(big?'Огромное спасибо, ':'Спасибо, ')+it.name+'! '+it.g.e;
-  $('th2').textContent=it.g.name+' · '+it.g.cost+' монет';
+  $('th1').textContent=(big?tr('Огромное спасибо, ','Huge thanks, '):tr('Спасибо, ','Thank you, '))+it.name+'! '+it.g.e;
+  $('th2').textContent=gname(it.g)+' · '+it.g.cost+tr(' монет',' coins');
   el.classList.toggle('big',big);el.classList.add('show');
   setTimeout(()=>{el.classList.remove('show');setTimeout(nextThanks,320);},big?3200:1900);
 }
 let ttsOn=false,ttsVoice=null;
 const BAD=/(ху[йяеё]|пизд|бля|ебa|еба|ёба|сук[аи]|шлюх|мудак|хер|fuck|shit|bitch|dick|porn)/i;
-function speakName(n){let t=(n||'').replace(/[_\.@#0-9]+/g,' ').replace(/\s+/g,' ').trim().slice(0,20);if(!t||BAD.test(t)||/https?|www/i.test(n))t='друг';return t;}
-function pickVoice(){try{const v=speechSynthesis.getVoices();ttsVoice=v.find(x=>/^ru/i.test(x.lang))||null;}catch(_){ttsVoice=null;}}
+function speakName(n){let t=(n||'').replace(/[_\.@#0-9]+/g,' ').replace(/\s+/g,' ').trim().slice(0,20);if(!t||BAD.test(t)||/https?|www/i.test(n))t=tr('друг','friend');return t;}
+function pickVoice(){try{const v=speechSynthesis.getVoices();ttsVoice=v.find(x=>new RegExp('^'+LANG,'i').test(x.lang))||null;}catch(_){ttsVoice=null;}}
 if(window.speechSynthesis){pickVoice();try{speechSynthesis.onvoiceschanged=pickVoice;}catch(_){}}
 function say(text,important){
   if(!ttsOn||!window.speechSynthesis)return;
   try{if(speechSynthesis.speaking&&!important)return;
-    const u=new SpeechSynthesisUtterance(text);if(ttsVoice){u.voice=ttsVoice;u.lang=ttsVoice.lang;}else u.lang='ru-RU';
+    const u=new SpeechSynthesisUtterance(text);if(ttsVoice){u.voice=ttsVoice;u.lang=ttsVoice.lang;}else u.lang=LANG==='en'?'en-US':'ru-RU';
     u.rate=1.02;u.onstart=()=>duck(true);u.onend=()=>duck(false);u.onerror=()=>duck(false);speechSynthesis.speak(u);}catch(_){}
 }
 function sayGift(name,g){
   const n=speakName(name);
-  if(g.cost>=100)say('Вау! '+n+', огромное спасибо за '+g.name+'!',true);
-  else if(g.id==='rose')say(n+', твоё фото уже печатается!');
-  else say('Спасибо, '+n+'!');
+  if(g.cost>=100)say(tr('Вау! '+n+', огромное спасибо за '+gname(g)+'!','Wow! '+n+', huge thanks for the '+gname(g)+'!'),true);
+  else if(g.id==='rose')say(tr(n+', твоё фото уже печатается!',n+', your photo is printing!'));
+  else say(tr('Спасибо, '+n+'!','Thank you, '+n+'!'));
 }
 function setTTS(on){ttsOn=on&&!!window.speechSynthesis;['ztts','ctts'].forEach(id=>{const b=$(id);b.textContent=ttsOn?'🔊':'🔇';b.classList.toggle('on',ttsOn);});
   if(on&&!window.speechSynthesis){banner('В этом браузере нет голоса');return;}
@@ -939,7 +951,7 @@ function beginPrint(){
   if(isFull(job.g)){P=fullP;const g=P.can.getContext('2d');g.setTransform(PCW/768,0,0,PCW/768,0,0);drawCard(g,768,714,job.g.id,job.name,topNames()[0]===job.name);g.setTransform(1,0,0,1,0,0);
     if(job.g.mega)megaPoster(P.can.getContext('2d'));
     P.m.position.set(0,P.m.position.y,BED0+LC/2);pz0=BED0;pz1=BED0+LC;px0=0;pxw=PW/2;P.nb=MODES[pm].fB||16;P.mode=pm;job.slot=-1;
-    banner('🖨 Печатается: '+job.name+' '+job.g.e);}
+    banner(tr('🖨 Печатается: ','🖨 Printing: ')+job.name+' '+job.g.e);}
   else{P=smallP;const free=[];slotsUsed.forEach((u,i)=>{if(!u)free.push(i);});const sl=pick(free);job.slot=sl;
     {const g=P.can.getContext('2d');g.setTransform(SW/341,0,0,SW/341,0,0);drawSmall(g,341,317,job.g.id,job.name);g.setTransform(1,0,0,1,0,0);}
     const c=sl%GC,r=Math.floor(sl/GC),w=PW/GC,h=LC/GR;px0=-PW/2+w*(c+.5);pz0=BED0+h*r;pz1=pz0+h;pxw=w/2;P.nb=MODES[pm].sB||10;P.mode=pm;
@@ -953,7 +965,7 @@ function beginPrint(){
 function megaPoster(g){const W=PCW,H=PCH;g.save();g.globalCompositeOperation='multiply';g.fillStyle='rgba(255,214,120,.42)';g.fillRect(0,0,W,H);g.restore();
   g.save();const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,'#8a5a12');gr.addColorStop(.5,'#ffe08a');gr.addColorStop(1,'#a86d14');
   g.strokeStyle=gr;g.lineWidth=W*.022;g.strokeRect(W*.018,H*.019,W*.964,H*.962);
-  g.fillStyle='#8a5a12';g.font='900 '+Math.round(W*.032)+'px Montserrat, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('★ ЛЕГЕНДА ★',W/2,H*.035);g.restore();}
+  g.fillStyle='#8a5a12';g.font='900 '+Math.round(W*.032)+'px Montserrat, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(tr('★ ЛЕГЕНДА ★','★ LEGEND ★'),W/2,H*.035);g.restore();}
 function addThumb(can){try{const t=document.createElement('canvas');t.width=180;t.height=Math.round(180*can.height/can.width);t.getContext('2d').drawImage(can,0,0,t.width,t.height);thumbs.unshift(t.toDataURL('image/jpeg',.8));if(thumbs.length>24)thumbs.pop();if($('gal').classList.contains('open'))renderGal();}catch(_){}}
 function finishPrint(){
   pFinish();
@@ -966,13 +978,13 @@ function finishPrint(){
   pageTex.needsUpdate=true;P.m.visible=false;P.m2.visible=false;clip.constant=100;
   sfx(job.g.cost>=100?'big':'gift');
   galCount++;addThumb(P.can);
-  if(galCount%GAL_GOAL===0){banner('🎉 Задание дня выполнено: '+galCount+' фото!');salute();}
+  if(galCount%GAL_GOAL===0){banner(tr('🎉 Задание дня выполнено: '+galCount+' фото!','🎉 Daily goal done: '+galCount+' photos!'));salute();}
   if(isFull(job.g))confetti(0,BED0+LC/2,job.g.cost>=100?160:70,job.g.cost>=100?[0xffcf5a,0xffe9a6,0xffffff]:CONF);
   else confetti(px0,(pz0+pz1)/2,10);
-  if(job.g.mega){bigMsg(job.name,'ЛЕГЕНДА! '+job.g.e+' золотой постер');salute();party=6;confetti(0,BED0+LC/2,260,[0xffcf5a,0xffe9a6,0xfff4cc]);}
-  else if(job.g.cost>=100){bigMsg(job.name,job.g.id==='corgi'?'СПОНСОР ДНЯ! 👑':'золотое фото готово! ✨');setFocusCard(job.g.id==='corgi'?4.5:3.2);}
+  if(job.g.mega){bigMsg(job.name,tr('ЛЕГЕНДА! '+job.g.e+' золотой постер','LEGEND! '+job.g.e+' golden poster'));salute();party=6;confetti(0,BED0+LC/2,260,[0xffcf5a,0xffe9a6,0xfff4cc]);}
+  else if(job.g.cost>=100){bigMsg(job.name,job.g.id==='corgi'?tr('СПОНСОР ДНЯ! 👑','SPONSOR OF THE DAY! 👑'):tr('золотое фото готово! ✨','golden photo ready! ✨'));setFocusCard(job.g.id==='corgi'?4.5:3.2);}
   const big=job.g.cost>=100,lastG=job.g;job=null;
-  if(isFull(lastG)){const sp=big?ST_SUPER:ST_VIP;ST_TGT.x=sp[0];ST_TGT.z=sp[1];stampTxt=lastG.mega?'ЛЕГЕНДА':big?'SUPER VIP':'VIP';phase='stamp';phaseT=0;stamped=false;holdDur=big?2.4:1.6;wantFocus=queue.length<=8;}
+  if(isFull(lastG)){const sp=big?ST_SUPER:ST_VIP;ST_TGT.x=sp[0];ST_TGT.z=sp[1];stampTxt=lastG.mega?tr('ЛЕГЕНДА','LEGEND'):big?'SUPER VIP':'VIP';phase='stamp';phaseT=0;stamped=false;holdDur=big?2.4:1.6;wantFocus=queue.length<=8;}
   else if(used>=GC*GR){phase='hold';phaseT=0;holdDur=1.2;}else phase='idle';
   updUI();
 }
@@ -993,7 +1005,7 @@ function topNames(){return Object.keys(scores).sort((p,q)=>scores[q]-scores[p]).
 function updBoard(changed){
   const top=topNames();
   $('brows').innerHTML=top.length?top.map((n,i)=>'<div class="brow'+(i===0?' first':'')+(n===changed?' flash':'')+'"><span class="m">'+MEDAL[i]+'</span><span class="n">'+esc(n)+'</span><span class="v">'+fmt(scores[n])+'</span></div>').join(''):'<div class="bempty">Пока пусто — будь первым!</div>';
-  if(top[0]&&top[0]!==leader){leader=top[0];if(Object.keys(scores).length>1)setTimeout(()=>banner('👑 Новый лидер: '+leader+'!'),600);}
+  if(top[0]&&top[0]!==leader){leader=top[0];if(Object.keys(scores).length>1)setTimeout(()=>banner(tr('👑 Новый лидер: ','👑 New leader: ')+leader+'!'),600);}
 }
 
 /* ---------- chat ---------- */
@@ -1002,12 +1014,12 @@ function chat(name,text){
   text=(text||'').trim().slice(0,40);if(!text)return;
   const who=name||pick(NAMES);toast('💬 <b>'+esc(who)+'</b>: '+esc(text));sfx('chat');
   const cmd=text.toLowerCase();
-  if(cmd==='!очередь'){const i=queue.findIndex(j=>j.name===who);
-    if(job&&job.name===who)toast('🖨 <b>'+esc(who)+'</b>, твоё фото сейчас печатается!');
-    else if(i>=0)toast('⏳ <b>'+esc(who)+'</b>, твоя очередь: '+(i+1));
-    else toast('🎁 <b>'+esc(who)+'</b>, тебя нет в очереди — отправь 🌹, и твоё фото напечатается');}
-  else if(cmd==='!подписка')followSticker(who);   /* demo: test the follow sticker */
-  else if(cmd==='!привет')toast('👋 Привет, <b>'+esc(who)+'</b>!');
+  if(cmd==='!очередь'||cmd==='!queue'){const i=queue.findIndex(j=>j.name===who);
+    if(job&&job.name===who)toast('🖨 <b>'+esc(who)+'</b>'+tr(', твоё фото сейчас печатается!',', your photo is printing now!'));
+    else if(i>=0)toast('⏳ <b>'+esc(who)+'</b>'+tr(', твоя очередь: ',', your place in line: ')+(i+1));
+    else toast('🎁 <b>'+esc(who)+'</b>'+tr(', тебя нет в очереди — отправь 🌹, и твоё фото напечатается',', you are not in line — send a 🌹 and your photo gets printed'));}
+  else if(cmd==='!подписка'||cmd==='!follow')followSticker(who);   /* demo: test the follow sticker */
+  else if(cmd==='!привет'||cmd==='!hi')toast(tr('👋 Привет, <b>','👋 Hi, <b>')+esc(who)+'</b>!');
 }
 function sendChatUI(t){chat($('who').value.trim()||null,t);}
 $('chatgo').addEventListener('click',()=>{sendChatUI($('chat').value);$('chat').value='';});
@@ -1023,21 +1035,21 @@ $('photofile').addEventListener('change',e=>{const f=e.target.files&&e.target.fi
 function sendGift(g,name){
   coins+=g.cost;fireCoins+=g.cost;flyEmoji(g.e);
   if(fireCoins>=FIRE_GOAL){fireCoins%=FIRE_GOAL;   /* one show per goal reached; a huge gift does not leave a pile of shows */
-    banner('🎆 САЛЮТ-ШОУ! Спасибо, зрители!');salute();party=6;}
+    banner(tr('🎆 САЛЮТ-ШОУ! Спасибо, зрители!','🎆 FIREWORKS SHOW! Thank you all!'));salute();party=6;}
   const who=name||pick(NAMES);
-  toast(g.e+' <b>'+esc(who)+'</b> — '+g.name+' ('+g.cost+')');
+  toast(g.e+' <b>'+esc(who)+'</b> — '+gname(g)+' ('+g.cost+')');
   lastGiftT=T;duckHop=.7;const woke=sleeping;if(woke)wakeUp(who,g);
   enqueue(who,woke&&g.id==='rose'?Object.assign({},GIFTS[1],{free:true}):g);
   if(hhLeft>0&&g.id==='rose'&&!woke)setTimeout(()=>enqueue(who,Object.assign({},g,{free:true})),250);
   scores[who]=(scores[who]||0)+g.cost;updBoard(who);updUI();
   thanks(who,g);sayGift(who,g);if(phase==='idle')sfx(g.cost>=100?'big':g.id==='rose'?'rose':'gift');
   if(g.id==='rose'){roseCnt[who]=(roseCnt[who]||0)+1;const c=roseCnt[who];
-    if(c>=COMBO_N){roseCnt[who]=0;setTimeout(()=>{banner('🎁 '+who+': 10 роз — Большое фото в подарок!');enqueue(who,Object.assign({},GIFTS[1],{free:true}));},400);}
-    else if(c>=5)toast('🌹 <b>'+esc(who)+'</b>: '+c+' / '+COMBO_N+' до бесплатного Большого фото');}
+    if(c>=COMBO_N){roseCnt[who]=0;setTimeout(()=>{banner(tr('🎁 '+who+': 10 роз — Большое фото в подарок!','🎁 '+who+': 10 roses — a free Big photo!'));enqueue(who,Object.assign({},GIFTS[1],{free:true}));},400);}
+    else if(c>=5)toast('🌹 <b>'+esc(who)+'</b>: '+c+' / '+COMBO_N+tr(' до бесплатного Большого фото',' to a free Big photo'));}
 }
 /* ---------- happy hour: now and then, for 2 minutes one rose prints two photos (only a glow on the rose row, no extra text on screen) ---------- */
 const HH_LEN=120;let hhLeft=0,hhNext=360+Math.random()*240;
-function hhStart(){hhLeft=HH_LEN;banner('🔥 Двойная печать! 2 минуты: 1 🌹 = 2 фото');hhUI();}
+function hhStart(){hhLeft=HH_LEN;banner(tr('🔥 Двойная печать! 2 минуты: 1 🌹 = 2 фото','🔥 Double print! 2 minutes: 1 🌹 = 2 photos'));hhUI();}
 function hhUI(){const b=$('prose');if(!b)return;const on=hhLeft>0;b.classList.toggle('x2',on);
   b.querySelector('.l').textContent=on?'×2 · '+Math.floor(hhLeft/60)+':'+String(Math.floor(hhLeft%60)).padStart(2,'0'):PLABEL.rose;}
 function hhTick(dt){
@@ -1048,7 +1060,7 @@ const SLEEP_AFTER=180;let lastGiftT=0,sleeping=false,wakeT=0;
 function sleepNow(){if(phase==='idle'&&!queue.length){sleeping=true;lastGiftT=-1e9;}}
 function sleepTick(){if(!sleeping&&phase==='idle'&&!queue.length&&T-lastGiftT>SLEEP_AFTER)sleeping=true;}
 function wakeUp(who,g){sleeping=false;wakeT=1.2;lastGiftT=T;
-  bigMsg('⚡ Принтер проснулся!',g.id==='rose'?who+' — Большое фото в подарок':who+' разбудил принтер');
+  bigMsg(tr('⚡ Принтер проснулся!','⚡ The printer woke up!'),g.id==='rose'?who+tr(' — Большое фото в подарок',' — a free Big photo'):who+tr(' разбудил принтер',' woke the printer'));
   const x=head.position.x,z=gantry.position.z;for(let i=0;i<40;i++){const a=Math.random()*Math.PI*2,sp=.25+Math.random()*.5;emit(x,Y0+.12,z,Math.cos(a)*sp,.3+Math.random()*.5,Math.sin(a)*sp,pick([0xffd36a,0x37e0ff,0xffffff]),.7,1.3);}}
 /* ---------- combo: 10 roses from one viewer = free big card ---------- */
 const COMBO_N=10,roseCnt={};
@@ -1056,7 +1068,7 @@ const COMBO_N=10,roseCnt={};
 const LIKE_GOAL=1000;let likes=0;const likers=[];
 function addLikes(name,n){
   const who=name||pick(NAMES);likes+=n;const i=likers.indexOf(who);if(i>=0)likers.splice(i,1);likers.push(who);if(likers.length>40)likers.shift();
-  while(likes>=LIKE_GOAL){likes-=LIKE_GOAL;const w=pick(likers);banner('❤ 1000 лайков! Бесплатное фото: '+w);setTimeout(()=>enqueue(w,Object.assign({},GIFTS[0],{free:true})),500);}
+  while(likes>=LIKE_GOAL){likes-=LIKE_GOAL;const w=pick(likers);banner(tr('❤ 1000 лайков! Бесплатное фото: ','❤ 1000 likes! Free photo: ')+w);setTimeout(()=>enqueue(w,Object.assign({},GIFTS[0],{free:true})),500);}
   updLikes();
 }
 function updLikes(){const a=$('lk'),b=$('lbar');if(a)a.textContent=likes+'/'+LIKE_GOAL;if(b)b.style.width=Math.min(100,likes/LIKE_GOAL*100)+'%';}
@@ -1239,7 +1251,7 @@ const stickers=[],pageStickers=[];   /* pageStickers: stickers already on the cu
 function drawPageStickers(g){pageStickers.forEach(p=>{g.save();g.translate(p.X,p.Z);g.rotate(-p.ang);g.drawImage(p.c,-p.w/2,-p.h/2,p.w,p.h);g.restore();});}
 /* the sticker takes a free card place on the paper (never covers a photo); if the page is full it waits for fresh paper */
 const pendingFollows=[];
-function followSticker(name){banner('➕ Спасибо за подписку, '+name+'!');pendingFollows.push(String(name));}
+function followSticker(name){banner(tr('➕ Спасибо за подписку, ','➕ Thanks for following, ')+name+'!');pendingFollows.push(String(name));}
 function freeSlotForSticker(){if(phase==='feed'||used>=GC*GR)return -1;
   const busy=job&&job.slot>=0?job.slot:-1,fullJob=(job&&(job.slot<0||isFull(job.g)))||(queue.length&&isFull(queue[0].g));if(fullJob)return -1;
   const free=[];slotsUsed.forEach((u,i)=>{if(!u&&i!==busy)free.push(i);});return free.length?pick(free):-1;}
@@ -1247,7 +1259,7 @@ function spawnSticker(name,sl){slotsUsed[sl]=true;used++;
   const c=document.createElement('canvas');c.width=600;c.height=220;const a=c.getContext('2d');
   a.fillStyle='#fff';a.beginPath();a.roundRect?a.roundRect(6,6,588,208,34):a.rect(6,6,588,208);a.fill();
   const gr=a.createLinearGradient(0,0,600,0);gr.addColorStop(0,'#ff4f8b');gr.addColorStop(1,'#ffb347');a.fillStyle=gr;a.beginPath();a.roundRect?a.roundRect(20,20,560,180,26):a.rect(20,20,560,180);a.fill();
-  a.fillStyle='#fff';a.textAlign='center';a.textBaseline='middle';a.font='800 46px Montserrat, sans-serif';a.fillText('➕ Спасибо за подписку',300,74,530);
+  a.fillStyle='#fff';a.textAlign='center';a.textBaseline='middle';a.font='800 46px Montserrat, sans-serif';a.fillText(tr('➕ Спасибо за подписку','➕ Thanks for following'),300,74,530);
   {const r=fitName(a,name,64,38,530,900);a.fillText(r.t,300,148);}
   const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;
   const m=new THREE.Mesh(new THREE.PlaneGeometry(.38,.139),new THREE.MeshBasicMaterial({map:tex,transparent:true}));
@@ -1376,7 +1388,7 @@ stage.addEventListener('pointerdown',showCtrl,true);
 /* ---------- start ---------- */
 function start(){
   if(location.hash==='#efir'||/[?&](u|efir)=/.test(location.search))setStream(true);   /* the LIVE Studio link may lose the #efir part */
-  updUI();toast('👋 Нажмите на подарок — фото напечатается на бумаге');
+  applyLang();updUI();toast(tr('👋 Нажмите на подарок — фото напечатается на бумаге','👋 Tap a gift — the photo gets printed on paper'));
   requestAnimationFrame(frame);
 }
 let started=false;const go=()=>{if(!started){started=true;start();}};

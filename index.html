@@ -368,7 +368,7 @@ function setFinal(on){finalMode=on;finDone=null;['cfin','zfin'].forEach(id=>$(id
   if(!on)$('finbar').className='';}
 function finTick(force){if(!finalMode)return;const done=phase==='idle'&&!queue.length&&!job&&!stickers.length;
   if(done!==finDone||force){finDone=done;const b=$('finbar');b.className='on'+(done?' done':'');
-    b.textContent=done?tr('🙏 Спасибо всем! До завтра 👋','🙏 Thank you all! See you tomorrow 👋'):tr('🏁 Эфир скоро закончится — последние подарки! 🎁','🏁 The stream ends soon — last gifts! 🎁');}}
+    b.textContent=done?tr('🙏 Спасибо всем! До завтра 👋','🙏 Thank you all! See you tomorrow 👋'):tr('🏁 Скоро завершаем — спасибо, что были с нами!','🏁 Wrapping up soon — thanks for being here!');}}
 ['cfin','zfin'].forEach(id=>$(id).addEventListener('click',()=>setFinal(!finalMode)));
 function setLang(l){LANG=l;try{localStorage.setItem('lang',l);}catch(_){}applyLang();finTick(true);banner(l==='en'?'🌐 English for viewers':'🌐 Русский для зрителей');}
 ['clang','zlang'].forEach(id=>$(id).addEventListener('click',()=>setLang(LANG==='en'?'ru':'en')));
@@ -380,7 +380,7 @@ new ResizeObserver(fitFire).observe($('deck'));
 {const v=$('firev');const ok=()=>$('deck').classList.add('vid');v.addEventListener('playing',ok);v.addEventListener('error',()=>$('deck').classList.remove('vid'));
   const tryPlay=()=>{try{const pr=v.play();if(pr&&pr.catch)pr.catch(()=>{});}catch(_){}};tryPlay();document.addEventListener('pointerdown',tryPlay,{once:true,capture:true});}
 for(let i=0;i<14;i++){const e=document.createElement('i');e.style.left=(15+Math.random()*70)+'%';e.style.animationDuration=(2.5+Math.random()*2.5)+'s';e.style.animationDelay=(-Math.random()*4)+'s';$('deck').appendChild(e);}
-{const cb=document.createElement('div');cb.id='cmdbar';cb.textContent='🎁 Отправь подарок — твоё фото напечатается!';$('strip').appendChild(cb);}
+{const cb=document.createElement('div');cb.id='cmdbar';cb.textContent='🖨 Здесь печатаются фото зрителей';$('strip').appendChild(cb);}
 let streamMode=false;
 function toast(html){
   const d=document.createElement('div');d.className='toast';d.innerHTML=html;feed.appendChild(d);
@@ -1061,7 +1061,7 @@ function chat(name,text){
   if(cmd==='!очередь'||cmd==='!queue'){const i=queue.findIndex(j=>j.name===who);
     if(job&&job.name===who)toast('🖨 <b>'+esc(who)+'</b>'+tr(', твоё фото сейчас печатается!',', your photo is printing now!'));
     else if(i>=0)toast('⏳ <b>'+esc(who)+'</b>'+tr(', твоя очередь: ',', your place in line: ')+(i+1));
-    else toast('🎁 <b>'+esc(who)+'</b>'+tr(', тебя нет в очереди — отправь 🌹, и твоё фото напечатается',', you are not in line — send a 🌹 and your photo gets printed'));}
+    else toast('🎁 <b>'+esc(who)+'</b>'+tr(', тебя пока нет в очереди',', you are not in the queue yet'));}
   else if(cmd==='!подписка'||cmd==='!follow')followSticker(who);   /* demo: test the follow sticker */
   else if(cmd==='!привет'||cmd==='!hi')toast(tr('👋 Привет, <b>','👋 Hi, <b>')+esc(who)+'</b>!');
 }
@@ -1088,12 +1088,12 @@ function sendGift(g,name){
   scores[who]=(scores[who]||0)+g.cost;updBoard(who);updUI();
   thanks(who,g);sayGift(who,g);if(phase==='idle')sfx(g.cost>=100?'big':g.id==='rose'?'rose':'gift');
   if(g.id==='rose'){roseCnt[who]=(roseCnt[who]||0)+1;const c=roseCnt[who];
-    if(c>=COMBO_N){roseCnt[who]=0;setTimeout(()=>{banner(tr('🎁 '+who+': 10 роз — Большое фото в подарок!','🎁 '+who+': 10 roses — a free Big photo!'));enqueue(who,Object.assign({},GIFTS[1],{free:true}));},400);}
-    else if(c>=5)toast('🌹 <b>'+esc(who)+'</b>: '+c+' / '+COMBO_N+tr(' до бесплатного Большого фото',' to a free Big photo'));}
+    if(c>=COMBO_N){roseCnt[who]=0;setTimeout(()=>{banner(tr('✨ '+who+' — Большое фото!','✨ '+who+' — Big photo!'));enqueue(who,Object.assign({},GIFTS[1],{free:true}));},400);}
+}
 }
 /* ---------- happy hour: now and then, for 2 minutes one rose prints two photos (only a glow on the rose row, no extra text on screen) ---------- */
 const HH_LEN=120;let hhLeft=0,hhNext=360+Math.random()*240;
-function hhStart(){hhLeft=HH_LEN;banner(tr('🔥 Двойная печать! 2 минуты: 1 🌹 = 2 фото','🔥 Double print! 2 minutes: 1 🌹 = 2 photos'));hhUI();}
+function hhStart(){hhLeft=HH_LEN;banner(tr('🔥 Сейчас двойная печать','🔥 Double print is on'));hhUI();}
 function hhUI(){const b=$('prose');if(!b)return;const on=hhLeft>0;b.classList.toggle('x2',on);
   b.querySelector('.l').textContent=on?'×2 · '+Math.floor(hhLeft/60)+':'+String(Math.floor(hhLeft%60)).padStart(2,'0'):PLABEL.rose;}
 function hhTick(dt){
@@ -1440,7 +1440,7 @@ stage.addEventListener('pointerdown',showCtrl,true);
 /* ---------- start ---------- */
 function start(){
   if(location.hash==='#efir'||/[?&](u|efir)=/.test(location.search))setStream(true);   /* the LIVE Studio link may lose the #efir part */
-  applyLang();updUI();toast(tr('👋 Нажмите на подарок — фото напечатается на бумаге','👋 Tap a gift — the photo gets printed on paper'));
+  applyLang();updUI();if(!streamMode)toast('👋 Нажмите на подарок — фото напечатается на бумаге');
   requestAnimationFrame(frame);
 }
 let started=false;const go=()=>{if(!started){started=true;start();}};

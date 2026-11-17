@@ -374,7 +374,7 @@ function updUI(){
   $('sft').textContent=fmt(fireCoins)+'/'+(FIRE_GOAL/1000)+'k';$('sfb').style.width=$('fbar').style.width;
   $('snow').textContent=job?job.g.e+' '+job.name:'—';
   $('sq').textContent=queue.length;
-  {$('sline').innerHTML=podiumHTML()+'<span class="pr"><span>⏳ '+queue.length+'</span><span>Галерея '+(galCount%GAL_GOAL)+'/'+GAL_GOAL+'</span></span>';}
+  {$('sline').innerHTML=podiumHTML()+'<span class="pr"><span>⏳ Очередь: '+queue.length+'</span></span>';}   /* viewers see only the queue; the gallery counter is for the owner (panel) */
   $('sqn').textContent=queue.length?queue.slice(0,3).map(j=>j.name).join(', ')+(queue.length>3?' …':''):'пусто — будь первым!';
 }
 /* «wall of honour»: top-3 sponsors as mini cards with their photos; a viewer who moves up pops */

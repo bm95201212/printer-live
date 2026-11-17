@@ -32,6 +32,11 @@ button.pill.on{background:#2f2a58;border-color:#7d6bff}
 .toast{background:rgba(10,8,22,.78);border:1px solid var(--line);padding:5px 9px;border-radius:9px;font-size:11px;line-height:1.3;animation:tin .25s ease both}
 .toast.out{animation:tout .4s ease forwards}
 .toast b{color:var(--gold)}
+#finbar{display:none;position:absolute;left:50%;bottom:calc(37.5% + 104px);transform:translateX(-50%);z-index:6;pointer-events:none;white-space:nowrap;padding:7px 12px;border-radius:22px;font:800 12px Montserrat,sans-serif;color:#fff;background:linear-gradient(90deg,#ff5a2a,#ff2d6b);box-shadow:0 6px 22px rgba(255,60,90,.45);animation:finp 1.1s ease-in-out infinite alternate}
+#finbar.on{display:block}
+#finbar.done{background:linear-gradient(90deg,#b8860b,#ffcf4a);color:#2a1a00;box-shadow:0 6px 22px rgba(255,200,80,.5);animation:none}
+@keyframes finp{from{transform:translateX(-50%) scale(1)}to{transform:translateX(-50%) scale(1.03)}}
+#cfin.on,#zfin.on{background:#ff3b6b;color:#fff}
 #banner{position:absolute;top:108px;left:50%;transform:translate(-50%,-30px);opacity:0;transition:.4s;background:linear-gradient(90deg,#ff3b6b,#8a5cff);padding:7px 14px;border-radius:20px;font-size:12px;font-weight:800;white-space:nowrap;pointer-events:none;box-shadow:0 6px 24px rgba(138,92,255,.4)}
 #banner.show{transform:translate(-50%,0);opacity:1}
 .board{position:absolute;left:8px;top:8px;width:158px;background:rgba(16,13,34,.82);border:1px solid rgba(255,207,90,.35);border-radius:12px;padding:7px 9px;pointer-events:none;box-shadow:0 4px 18px rgba(0,0,0,.35)}
@@ -255,12 +260,12 @@ body.stream #sndmenu{right:auto;left:50%;transform:translateX(-50%);top:calc(env
 
   <div id="stage">
     <div id="feed"></div>
-    <div id="banner"></div>
+    <div id="banner"></div><div id="finbar"></div>
     <div id="pass"><div class="p1" id="pass1"></div><div class="p2" id="pass2"></div></div>
     <div class="board"><div class="bt">🏆 ТОП СПОНСОРОВ</div><div id="brows"><div class="bempty">Пока пусто — будь первым!</div></div></div>
-    <div id="zoom"><button id="zin" aria-label="Приблизить">+</button><button id="zout" aria-label="Отдалить">−</button><button id="zgal" aria-label="Галерея">🖼</button><button id="zsnd" class="on" aria-label="Звук принтера">🔈</button><button id="ztts" aria-label="Голос">🔇</button><button id="zmus" aria-label="Музыка">🎵</button><button id="zsong" aria-label="Свои песни">📁</button><button id="zlang" aria-label="Язык">RU</button></div>
+    <div id="zoom"><button id="zin" aria-label="Приблизить">+</button><button id="zout" aria-label="Отдалить">−</button><button id="zgal" aria-label="Галерея">🖼</button><button id="zsnd" class="on" aria-label="Звук принтера">🔈</button><button id="ztts" aria-label="Голос">🔇</button><button id="zmus" aria-label="Музыка">🎵</button><button id="zsong" aria-label="Свои песни">📁</button><button id="zlang" aria-label="Язык">RU</button><button id="zfin" aria-label="Финал">🏁</button></div>
     <div id="hint">☝ повернуть<br>✌ приблизить</div>
-    <div id="ctrl"><button id="cx" aria-label="Выход">✕</button><button id="ctt">🔗</button><button id="cfs" aria-label="Полный экран">⛶</button><button id="csafe" aria-label="Вид TikTok">👁</button><button id="cgal">🖼</button><button id="csnd" class="on">🔈</button><button id="ctts">🔇</button><button id="cmus">🎵</button><button id="csong">📁</button><button id="clang">RU</button><button id="cauto">Авто ▶</button></div>
+    <div id="ctrl"><button id="cx" aria-label="Выход">✕</button><button id="ctt">🔗</button><button id="cfs" aria-label="Полный экран">⛶</button><button id="csafe" aria-label="Вид TikTok">👁</button><button id="cgal">🖼</button><button id="csnd" class="on">🔈</button><button id="ctts">🔇</button><button id="cmus">🎵</button><button id="csong">📁</button><button id="clang">RU</button><button id="cfin" aria-label="Финал">🏁</button><button id="cauto">Авто ▶</button></div>
     <div id="strip"></div>
     <div id="stask"><div class="sl"><span>🖨 Печатается</span></div><div class="now" id="snow">—</div><div class="sl"><span>⏳ Очередь</span><span id="sq">0</span></div><div class="q" id="sqn"></div><div class="sl"><span>🖼 Галерея</span><span id="sgt">0 / 20</span></div><div class="bar v"><i id="sgb"></i></div><div class="sl"><span>🎆 Салют</span><span id="sft">0</span></div><div class="bar"><i id="sfb"></i></div></div>
     <div id="sline"></div>
@@ -357,7 +362,15 @@ function applyLang(){
   $('comborow').innerHTML='10 🌹 = <b>'+tr('Большое','Big photo')+'</b> 🎁';$('lkw').textContent=tr('фото','photo');
   try{pickVoice();}catch(_){}try{updUI();}catch(_){}
 }
-function setLang(l){LANG=l;try{localStorage.setItem('lang',l);}catch(_){}applyLang();banner(l==='en'?'🌐 English for viewers':'🌐 Русский для зрителей');}
+/* 🏁 final: tells viewers the stream ends soon; when the queue is done it thanks everybody, so the owner knows it is safe to stop */
+let finalMode=false,finDone=null;
+function setFinal(on){finalMode=on;finDone=null;['cfin','zfin'].forEach(id=>$(id).classList.toggle('on',on));finTick(true);
+  if(!on)$('finbar').className='';}
+function finTick(force){if(!finalMode)return;const done=phase==='idle'&&!queue.length&&!job&&!stickers.length;
+  if(done!==finDone||force){finDone=done;const b=$('finbar');b.className='on'+(done?' done':'');
+    b.textContent=done?tr('🙏 Спасибо всем! До завтра 👋','🙏 Thank you all! See you tomorrow 👋'):tr('🏁 Эфир скоро закончится — последние подарки! 🎁','🏁 The stream ends soon — last gifts! 🎁');}}
+['cfin','zfin'].forEach(id=>$(id).addEventListener('click',()=>setFinal(!finalMode)));
+function setLang(l){LANG=l;try{localStorage.setItem('lang',l);}catch(_){}applyLang();finTick(true);banner(l==='en'?'🌐 English for viewers':'🌐 Русский для зрителей');}
 ['clang','zlang'].forEach(id=>$(id).addEventListener('click',()=>setLang(LANG==='en'?'ru':'en')));
 /* fire video: the whole fire sits in the free left part of the deck (the price list covers the right 47%) */
 function fitFire(){const d=$('deck'),v=$('firev'),w=d.clientWidth,h=d.clientHeight;if(!w||!h)return;
@@ -1229,7 +1242,7 @@ function frame(){
   else{const d=camDist*zoomT;lookGoal.set(0,0,streamMode?.086:-.05);posGoal.set(Math.sin(yaw)*d*.3,d*.6947,lookGoal.z+Math.cos(yaw)*d*.7193);}
   const kk=T<.2?1:Math.min(1,dt*2.2);camLook.lerp(lookGoal,kk);camPos.lerp(posGoal,kk);
   camera.position.copy(camPos);camera.lookAt(camLook);
-  updStickers(dt);updDuck(dt);
+  updStickers(dt);updDuck(dt);finTick();
   renderer.render(scene,camera);
   requestAnimationFrame(frame);
 }

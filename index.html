@@ -419,6 +419,12 @@ const woodTex=new THREE.TextureLoader().load('img/wood.jpg');woodTex.encoding=TH
 woodTex.wrapS=woodTex.wrapT=THREE.MirroredRepeatWrapping;woodTex.repeat.set(2.4,2.6);
 const table=new THREE.Mesh(new THREE.BoxGeometry(4.2,.08,2.9),new THREE.MeshStandardMaterial({map:woodTex,color:0x6f4d37,roughness:.6,metalness:0,envMap:ENV,envMapIntensity:.2}));
 table.position.set(0,-.04,.25-1.45);table.receiveShadow=true;scene.add(table);
+/* desk front under the table top: fills the dark gap beside the hanging paper (the paper hangs in front of it) */
+{const ft=new THREE.TextureLoader().load('img/wood.jpg');ft.encoding=THREE.sRGBEncoding;ft.anisotropy=8;ft.wrapS=ft.wrapT=THREE.MirroredRepeatWrapping;ft.repeat.set(2.4,.74);
+  const front=new THREE.Mesh(new THREE.BoxGeometry(4.2,.82,.04),new THREE.MeshStandardMaterial({map:ft,color:0x5a3b27,roughness:.7,metalness:0}));
+  front.position.set(0,-.08-.41,.10);front.receiveShadow=true;scene.add(front);
+  const sc=document.createElement('canvas');sc.width=4;sc.height=64;const sg=sc.getContext('2d'),gr=sg.createLinearGradient(0,0,0,64);gr.addColorStop(0,'rgba(0,0,0,.75)');gr.addColorStop(1,'rgba(0,0,0,0)');sg.fillStyle=gr;sg.fillRect(0,0,4,64);
+  const sh=new THREE.Mesh(new THREE.PlaneGeometry(4.2,.22),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(sc),transparent:true,depthWrite:false}));sh.position.set(0,-.08-.11,.1205);scene.add(sh);}
 const wall=new THREE.Mesh(new THREE.PlaneGeometry(8,4),new THREE.MeshBasicMaterial({color:0x0b0907}));wall.position.set(0,1.2,-2.05);scene.add(wall);
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(8,8),new THREE.MeshBasicMaterial({color:0x070605}));floor.rotation.x=-Math.PI/2;floor.position.y=-.9;scene.add(floor);
 

@@ -502,11 +502,20 @@ const DUCK_H=.13,DUCK_AR={awake:411/512,sleep:435/512};
 const duckMat=new THREE.SpriteMaterial({map:duckTex.awake,color:0xe6e6e6,transparent:true});
 const duckSpr=new THREE.Sprite(duckMat);duckSpr.center.set(.5,0);duckSpr.scale.set(DUCK_H*DUCK_AR.awake,DUCK_H,1);toyDuck.add(duckSpr);
 toyDuck.position.set(.12,.13,-.99);printer.add(toyDuck);
+/* sleeping duck: small "Z" letters float up from its beak */
+const zTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');g.font='900 104px Montserrat, Arial, sans-serif';g.textAlign='center';g.textBaseline='middle';
+  g.lineWidth=12;g.strokeStyle='rgba(20,30,60,.85)';g.strokeText('Z',64,68);g.fillStyle='#cfe8ff';g.fillText('Z',64,68);const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;})();
+const zs=[0,1,2].map(i=>{const m=new THREE.SpriteMaterial({map:zTex,transparent:true,depthWrite:false,opacity:0});const sp=new THREE.Sprite(m);sp.visible=false;toyDuck.add(sp);return {sp,m,t:-i*.8};});
+function updZ(dt,on){zs.forEach(z=>{if(!on){z.sp.visible=false;z.t=-zs.indexOf(z)*.8;return;}
+  z.t+=dt;if(z.t<0){z.sp.visible=false;return;}if(z.t>2.4)z.t-=2.4;const k=z.t/2.4;
+  z.sp.visible=true;z.m.opacity=k<.15?k/.15:1-Math.max(0,(k-.55)/.45);const sz=.022+.03*k;z.sp.scale.set(sz,sz,1);
+  z.sp.position.set(.05+.05*k+Math.sin(k*6)*.008,.1+.11*k,0);z.m.rotation=-.25+.2*Math.sin(k*4);});}
 let duckHop=0,duckState='awake';
 function updDuck(dt){duckHop=Math.max(0,duckHop-dt);const k=duckHop>0?1-duckHop/.7:0,sl=sleeping&&duckHop<=0,st=sl?'sleep':'awake';
   if(st!==duckState){duckState=st;duckMat.map=duckTex[st];duckSpr.scale.set(DUCK_H*DUCK_AR[st],DUCK_H,1);duckMat.needsUpdate=true;}
   toyDuck.position.y=.13+(duckHop>0?Math.sin(k*Math.PI)*.04:sl?0:Math.abs(Math.sin(T*1.6))*.002);
-  duckMat.rotation=duckHop>0?Math.sin(k*Math.PI*2)*.22:sl?0:Math.sin(T*.9)*.04;}
+  duckMat.rotation=duckHop>0?Math.sin(k*Math.PI*2)*.22:sl?0:Math.sin(T*.9)*.04;
+  updZ(dt,sl);}
 const gantry=new THREE.Group();printer.add(gantry);
 const BELT_Y=.13;
 {[0,-.048].forEach(z=>{const bar=new THREE.Mesh(new THREE.CylinderGeometry(.017,.017,1.2,28),chrome);bar.rotation.z=Math.PI/2;bar.position.set(0,.1,z);bar.castShadow=true;gantry.add(bar);});

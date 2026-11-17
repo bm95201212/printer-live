@@ -347,19 +347,18 @@ GIFTS.forEach(g=>{
 {const b=document.createElement('button');b.className='gift';const g=MEGA_TEST;
   b.innerHTML='<span class="e">'+g.e+'</span><div><b>'+g.name+'</b><span class="c">'+g.cost+' монет</span><span class="d">'+g.desc+'</span></div>';
   b.addEventListener('click',()=>{if(!demoOk())return;const n=$('who').value.trim();sendGift(g,n||null);});$('gifts').appendChild(b);}
-[['🎄','Новогодняя рамка','тест: авто → вкл → выкл',function(){const nx={auto:'on',on:'off',off:'auto'}[nyMode()];try{localStorage.setItem('nyForce',nx);}catch(_){}banner('🎄 Новогодняя рамка: '+{auto:'авто (1 дек – 10 янв)',on:'включена',off:'выключена'}[nx]);}],['🔥','Двойная печать','тест: 2 минуты 1 роза = 2 фото',()=>hhStart()],['😴','Сон принтера','тест: принтер засыпает',()=>{sleepNow();}]].forEach(([e,n,d,f])=>{const b=document.createElement('button');b.className='gift';
+[['🎄','Новогодняя рамка','тест: авто → вкл → выкл',function(){const nx={auto:'on',on:'off',off:'auto'}[nyMode()];try{localStorage.setItem('nyForce',nx);}catch(_){}banner('🎄 Новогодняя рамка: '+{auto:'авто (1 дек – 10 янв)',on:'включена',off:'выключена'}[nx]);}],['😴','Сон принтера','тест: принтер засыпает',()=>{sleepNow();}]].forEach(([e,n,d,f])=>{const b=document.createElement('button');b.className='gift';
   b.innerHTML='<span class="e">'+e+'</span><div><b>'+n+'</b><span class="d">'+d+'</span></div>';b.addEventListener('click',f);$('gifts').appendChild(b);});
 GIFTS.forEach(g=>{const c=document.createElement('button');c.className='chip';
   c.innerHTML='<span class="e">'+g.e+'</span><div><span class="c">'+g.cost+'</span><span class="l">'+SHORT[g.id]+'</span></div>';
   c.addEventListener('click',()=>{if(demoOk())sendGift(g,null);});$('strip').appendChild(c);});
 const PLAB={rose:['Печать','Print'],donut:['Большое','Big'],gold:['Супер','Super']},PLABEL={get rose(){return tr(...PLAB.rose);},get donut(){return tr(...PLAB.donut);},get gold(){return tr(...PLAB.gold);}};
 GIFTS.forEach(g=>{const b=document.createElement('button');b.dataset.gid=g.id;if(g.id==='rose')b.id='prose';b.innerHTML='<span class="ic"><b>'+g.e+'</b><s>🪙'+g.cost+'</s></span><span class="l">'+PLABEL[g.id]+'</span>';b.addEventListener('click',()=>{if(demoOk())sendGift(g,null);});$('plist').appendChild(b);});
-{const a=document.createElement('div');a.className='pinfo';a.id='comborow';$('plist').appendChild(a);
- const l=document.createElement('div');l.className='pinfo';l.id='likerow';l.style.cursor='pointer';l.innerHTML='❤ <b id="lk">0/500</b> = <b id="lkw"></b> 🎁<div class="lbar"><i id="lbar"></i></div>';$('plist').appendChild(l);}
+{const l=document.createElement('div');l.className='pinfo';l.id='likerow';l.style.display='none';l.innerHTML='❤ <b id="lk">0/500</b> = <b id="lkw"></b> 🎁<div class="lbar"><i id="lbar"></i></div>';$('plist').appendChild(l);}
 function applyLang(){
   ['clang','zlang'].forEach(id=>{const b=$(id);if(b)b.textContent=LANG.toUpperCase();});
   document.querySelectorAll('#plist button[data-gid]').forEach(b=>{if(b.id!=='prose'||!b.classList.contains('x2'))b.querySelector('.l').textContent=PLABEL[b.dataset.gid];});
-  $('comborow').innerHTML='10 🌹 = <b>'+tr('Большое','Big photo')+'</b> 🎁';$('lkw').textContent=tr('фото','photo');
+
   try{pickVoice();}catch(_){}try{updUI();}catch(_){}
 }
 /* 🏁 final: tells viewers the stream ends soon; when the queue is done it thanks everybody, so the owner knows it is safe to stop */
@@ -404,7 +403,7 @@ function updUI(){
   $('sft').textContent=fmt(fireCoins)+'/'+fmt(FIRE_GOAL);$('sfb').style.width=$('fbar').style.width;
   $('snow').textContent=job?job.g.e+' '+job.name:'—';
   $('sq').textContent=queue.length;
-  {$('sline').innerHTML=podiumHTML()+'<span class="goal"><b>'+tr('🎆 Салют','🎆 Fireworks')+'</b><i><u style="width:'+Math.min(100,fireCoins/FIRE_GOAL*100).toFixed(1)+'%"></u></i><s>'+fmt(fireCoins)+' / '+fmt(FIRE_GOAL)+'</s></span><span class="pr"><span>⏳ '+tr('Очередь','Queue')+': '+queue.length+'</span></span>';}   /* viewers see only the queue; the gallery counter is for the owner (panel) */
+  {$('sline').innerHTML=podiumHTML()+'<span class="pr"><span>⏳ '+tr('Очередь','Queue')+': '+queue.length+'</span></span>';}   /* viewers see only the queue; the gallery counter is for the owner (panel) */
   $('sqn').textContent=queue.length?queue.slice(0,3).map(j=>j.name).join(', ')+(queue.length>3?' …':''):'пусто — будь первым!';
 }
 /* «wall of honour»: top-3 sponsors as mini cards with their photos; a viewer who moves up pops */
@@ -412,9 +411,9 @@ let podPrev=[];
 function avSrc(name){const im=avatars[name]||(ttReal.has(name)?null:demoAvatar(name));return im&&im.src?im.src:'';}
 function podiumHTML(){const top=topNames(),M=['🥇','🥈','🥉'];let h='<span class="podium">';
   for(let i=0;i<3;i++){const n=top[i];
-    if(!n){h+='<span class="pc empty r'+(i+1)+'"><span class="av">?</span><i>'+M[i]+'</i><b>'+tr('свободно','free')+'</b><s>&nbsp;</s></span>';continue;}
+    if(!n){h+='<span class="pc empty r'+(i+1)+'"><span class="av">?</span><i>'+M[i]+'</i><b>'+tr('свободно','free')+'</b></span>';continue;}
     const up=podPrev.indexOf(n)<0||podPrev.indexOf(n)>i,src=avSrc(n);
-    h+='<span class="pc r'+(i+1)+(up?' up':'')+'"><span class="av">'+(src?'<img src="'+esc(src)+'" alt="">':esc(initials(n)))+'</span><i>'+M[i]+'</i><b>'+esc(n)+'</b><s>'+fmt(scores[n])+'</s></span>';}
+    h+='<span class="pc r'+(i+1)+(up?' up':'')+'"><span class="av">'+(src?'<img src="'+esc(src)+'" alt="">':esc(initials(n)))+'</span><i>'+M[i]+'</i><b>'+esc(n)+'</b></span>';}   /* no coin numbers on screen (TikTok: no gift score games) */
   podPrev=top.slice();return h+'</span>';}
 let passTO;
 function bigMsg(a,b){$('pass1').textContent=a;$('pass2').textContent=b;const p=$('pass');p.classList.add('show');clearTimeout(passTO);passTO=setTimeout(()=>p.classList.remove('show'),2400);}
@@ -811,7 +810,7 @@ function nextThanks(){
   if(!it){thBusy=false;el.classList.remove('show');return;}
   thBusy=true;const big=it.g.cost>=100;
   $('th1').textContent=(big?tr('Огромное спасибо, ','Huge thanks, '):tr('Спасибо, ','Thank you, '))+it.name+'! '+it.g.e;
-  $('th2').textContent=gname(it.g)+' · '+it.g.cost+tr(' монет',' coins');
+  $('th2').textContent=gname(it.g);
   el.classList.toggle('big',big);el.classList.add('show');
   setTimeout(()=>{el.classList.remove('show');setTimeout(nextThanks,320);},big?3200:1900);
 }
@@ -1022,7 +1021,6 @@ function finishPrint(){
   pageTex.needsUpdate=true;P.m.visible=false;P.m2.visible=false;clip.constant=100;
   sfx(job.g.cost>=100?'big':'gift');
   galCount++;addThumb(P.can);
-  if(galCount%GAL_GOAL===0){banner(tr('🎉 Задание дня выполнено: '+galCount+' фото!','🎉 Daily goal done: '+galCount+' photos!'));salute();}
   if(isFull(job.g))confetti(0,BED0+LC/2,job.g.cost>=100?160:70,job.g.cost>=100?[0xffcf5a,0xffe9a6,0xffffff]:CONF);
   else confetti(px0,(pz0+pz1)/2,10);
   if(job.g.mega){bigMsg(job.name,tr('ЛЕГЕНДА! '+job.g.e+' золотой постер','LEGEND! '+job.g.e+' golden poster'));salute();party=6;confetti(0,BED0+LC/2,260,[0xffcf5a,0xffe9a6,0xfff4cc]);}
@@ -1078,33 +1076,27 @@ $('photofile').addEventListener('change',e=>{const f=e.target.files&&e.target.fi
 /* ---------- gifts ---------- */
 function sendGift(g,name){
   coins+=g.cost;fireCoins+=g.cost;flyEmoji(g.e);
-  if(fireCoins>=FIRE_GOAL){fireCoins%=FIRE_GOAL;   /* one show per goal reached; a huge gift does not leave a pile of shows */
-    banner(tr('🎆 САЛЮТ-ШОУ! Спасибо, зрители!','🎆 FIREWORKS SHOW! Thank you all!'));salute();party=6;}
   const who=name||pick(NAMES);
   toast(g.e+' <b>'+esc(who)+'</b> — '+gname(g)+' ('+g.cost+')');
   lastGiftT=T;duckHop=.7;const woke=sleeping;if(woke)wakeUp(who,g);
-  enqueue(who,woke&&g.id==='rose'?Object.assign({},GIFTS[1],{free:true}):g);
-  if(hhLeft>0&&g.id==='rose'&&!woke)setTimeout(()=>enqueue(who,Object.assign({},g,{free:true})),250);
+  enqueue(who,g);
   scores[who]=(scores[who]||0)+g.cost;updBoard(who);updUI();
   thanks(who,g);sayGift(who,g);if(phase==='idle')sfx(g.cost>=100?'big':g.id==='rose'?'rose':'gift');
-  if(g.id==='rose'){roseCnt[who]=(roseCnt[who]||0)+1;const c=roseCnt[who];
-    if(c>=COMBO_N){roseCnt[who]=0;setTimeout(()=>{banner(tr('✨ '+who+' — Большое фото!','✨ '+who+' — Big photo!'));enqueue(who,Object.assign({},GIFTS[1],{free:true}));},400);}
-}
 }
 /* ---------- happy hour: now and then, for 2 minutes one rose prints two photos (only a glow on the rose row, no extra text on screen) ---------- */
-const HH_LEN=120;let hhLeft=0,hhNext=360+Math.random()*240;
+const HH_LEN=120;let hhLeft=0,hhNext=Infinity;   /* double print is off: an extra photo for a gift counts as a prize (TikTok rules) */
 function hhStart(){hhLeft=HH_LEN;banner(tr('🔥 Сейчас двойная печать','🔥 Double print is on'));hhUI();}
 function hhUI(){const b=$('prose');if(!b)return;const on=hhLeft>0;b.classList.toggle('x2',on);
   b.querySelector('.l').textContent=on?'×2 · '+Math.floor(hhLeft/60)+':'+String(Math.floor(hhLeft%60)).padStart(2,'0'):PLABEL.rose;}
 function hhTick(dt){
-  if(hhLeft>0){const s0=Math.floor(hhLeft);hhLeft=Math.max(0,hhLeft-dt);if(Math.floor(hhLeft)!==s0||hhLeft<=0)hhUI();if(hhLeft<=0)hhNext=600+Math.random()*240;}
+  if(hhLeft>0){const s0=Math.floor(hhLeft);hhLeft=Math.max(0,hhLeft-dt);if(Math.floor(hhLeft)!==s0||hhLeft<=0)hhUI();if(hhLeft<=0)hhNext=Infinity;}
   else if(!sleeping){hhNext-=dt;if(hhNext<=0)hhStart();}}
 /* ---------- sleep: 90 s without gifts -> the printer dozes (its light breathes slowly); the first gift wakes it, a rose then prints as a big card ---------- */
 const SLEEP_AFTER=90;let lastGiftT=0,sleeping=false,wakeT=0;
 function sleepNow(){if(phase==='idle'&&!queue.length){sleeping=true;lastGiftT=-1e9;}}
 function sleepTick(){if(!sleeping&&phase==='idle'&&!queue.length&&T-lastGiftT>SLEEP_AFTER)sleeping=true;}
 function wakeUp(who,g){sleeping=false;wakeT=1.2;lastGiftT=T;
-  bigMsg(tr('⚡ Принтер проснулся!','⚡ The printer woke up!'),g.id==='rose'?who+tr(' — Большое фото в подарок',' — a free Big photo'):who+tr(' разбудил принтер',' woke the printer'));
+  bigMsg(tr('⚡ Принтер проснулся!','⚡ The printer woke up!'),who+tr(' разбудил принтер',' woke the printer'));
   const x=head.position.x,z=gantry.position.z;for(let i=0;i<40;i++){const a=Math.random()*Math.PI*2,sp=.25+Math.random()*.5;emit(x,Y0+.12,z,Math.cos(a)*sp,.3+Math.random()*.5,Math.sin(a)*sp,pick([0xffd36a,0x37e0ff,0xffffff]),.7,1.3);}}
 /* ---------- combo: 10 roses from one viewer = free big card ---------- */
 const COMBO_N=10,roseCnt={};
@@ -1112,7 +1104,7 @@ const COMBO_N=10,roseCnt={};
 const LIKE_GOAL=500;let likes=0;const likers=[];
 function addLikes(name,n){
   const who=name||pick(NAMES);likes+=n;const i=likers.indexOf(who);if(i>=0)likers.splice(i,1);likers.push(who);if(likers.length>40)likers.shift();
-  while(likes>=LIKE_GOAL){likes-=LIKE_GOAL;const real=ttLive?likers.filter(n=>ttReal.has(n)):likers,w=pick(real.length?real:likers);banner(tr('❤ '+LIKE_GOAL+' лайков! Бесплатное фото: ','❤ '+LIKE_GOAL+' likes! Free photo: ')+w);setTimeout(()=>enqueue(w,Object.assign({},GIFTS[0],{free:true})),500);}
+  while(false&&likes>=LIKE_GOAL){likes-=LIKE_GOAL;   /* free photo for likes is off (TikTok: no rewards for engagement) */const real=ttLive?likers.filter(n=>ttReal.has(n)):likers,w=pick(real.length?real:likers);banner(tr('❤ '+LIKE_GOAL+' лайков! Бесплатное фото: ','❤ '+LIKE_GOAL+' likes! Free photo: ')+w);setTimeout(()=>enqueue(w,Object.assign({},GIFTS[0],{free:true})),500);}
   updLikes();try{likeFx(n);}catch(_){}
 }
 function updLikes(){const a=$('lk'),b=$('lbar');if(a)a.textContent=likes+'/'+LIKE_GOAL;if(b)b.style.width=Math.min(100,likes/LIKE_GOAL*100)+'%';}

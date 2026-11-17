@@ -1077,8 +1077,8 @@ function hhUI(){const b=$('prose');if(!b)return;const on=hhLeft>0;b.classList.to
 function hhTick(dt){
   if(hhLeft>0){const s0=Math.floor(hhLeft);hhLeft=Math.max(0,hhLeft-dt);if(Math.floor(hhLeft)!==s0||hhLeft<=0)hhUI();if(hhLeft<=0)hhNext=600+Math.random()*240;}
   else if(!sleeping){hhNext-=dt;if(hhNext<=0)hhStart();}}
-/* ---------- sleep: 3 minutes without gifts -> the printer dozes (its light breathes slowly); the first gift wakes it, a rose then prints as a big card ---------- */
-const SLEEP_AFTER=180;let lastGiftT=0,sleeping=false,wakeT=0;
+/* ---------- sleep: 90 s without gifts -> the printer dozes (its light breathes slowly); the first gift wakes it, a rose then prints as a big card ---------- */
+const SLEEP_AFTER=90;let lastGiftT=0,sleeping=false,wakeT=0;
 function sleepNow(){if(phase==='idle'&&!queue.length){sleeping=true;lastGiftT=-1e9;}}
 function sleepTick(){if(!sleeping&&phase==='idle'&&!queue.length&&T-lastGiftT>SLEEP_AFTER)sleeping=true;}
 function wakeUp(who,g){sleeping=false;wakeT=1.2;lastGiftT=T;

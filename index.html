@@ -1155,21 +1155,29 @@ $('auto').addEventListener('click',toggleAuto);$('cauto').addEventListener('clic
 /* ---------- follow → a «thank you» sticker drops onto the paper and stays printed there ---------- */
 const stickers=[],pageStickers=[];   /* pageStickers: stickers already on the current page; redrawn on top after every new card */
 function drawPageStickers(g){pageStickers.forEach(p=>{g.save();g.translate(p.X,p.Z);g.rotate(-p.ang);g.drawImage(p.c,-p.w/2,-p.h/2,p.w,p.h);g.restore();});}
-function followSticker(name){banner('➕ Спасибо за подписку, '+name+'!');
+/* the sticker takes a free card place on the paper (never covers a photo); if the page is full it waits for fresh paper */
+const pendingFollows=[];
+function followSticker(name){banner('➕ Спасибо за подписку, '+name+'!');pendingFollows.push(String(name));}
+function freeSlotForSticker(){if(phase==='feed'||used>=GC*GR)return -1;
+  const busy=job&&job.slot>=0?job.slot:-1,fullJob=job&&job.slot<0;if(fullJob)return -1;
+  const free=[];slotsUsed.forEach((u,i)=>{if(!u&&i!==busy)free.push(i);});return free.length?pick(free):-1;}
+function spawnSticker(name,sl){slotsUsed[sl]=true;used++;
   const c=document.createElement('canvas');c.width=600;c.height=220;const a=c.getContext('2d');
   a.fillStyle='#fff';a.beginPath();a.roundRect?a.roundRect(6,6,588,208,34):a.rect(6,6,588,208);a.fill();
   const gr=a.createLinearGradient(0,0,600,0);gr.addColorStop(0,'#ff4f8b');gr.addColorStop(1,'#ffb347');a.fillStyle=gr;a.beginPath();a.roundRect?a.roundRect(20,20,560,180,26):a.rect(20,20,560,180);a.fill();
   a.fillStyle='#fff';a.textAlign='center';a.textBaseline='middle';a.font='800 46px Montserrat, sans-serif';a.fillText('➕ Спасибо за подписку',300,74,530);
   a.font='900 64px Montserrat, sans-serif';a.fillText(String(name).slice(0,18),300,148,530);
   const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;
-  const m=new THREE.Mesh(new THREE.PlaneGeometry(.40,.147),new THREE.MeshBasicMaterial({map:tex,transparent:true}));
-  const side=Math.random()<.5?-1:1,x=side*(.12+Math.random()*.05),z=BED0+LC*(.15+Math.random()*.03),ang=side*(.12+Math.random()*.14);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(.38,.139),new THREE.MeshBasicMaterial({map:tex,transparent:true}));
+  const sw=PW/GC,sh=LC/GR,x=-PW/2+sw*(sl%GC+.5),z=BED0+sh*(Math.floor(sl/GC)+.5),ang=(Math.random()<.5?-1:1)*(.08+Math.random()*.1);
   m.rotation.set(-Math.PI/2,0,ang);m.position.set(x,Y0+.25,z);m.renderOrder=6;scene.add(m);
   stickers.push({m,c,x,z,ang,t:0});}
-function updStickers(dt){for(let i=stickers.length-1;i>=0;i--){const st=stickers[i];
+function updStickers(dt){
+  if(pendingFollows.length&&!stickers.length){const sl=freeSlotForSticker();if(sl>=0)spawnSticker(pendingFollows.shift(),sl);}
+  for(let i=stickers.length-1;i>=0;i--){const st=stickers[i];
     if(phase==='feed'){st.m.visible=false;continue;}st.m.visible=true;   /* wait while the paper is moving */
     st.t+=dt;const k=Math.min(1,st.t/.45),e=1-Math.pow(1-k,3);st.m.position.y=Y0+.25-(.25-.004)*e;const sc=1.5-.5*e;st.m.scale.set(sc,sc,1);
-    if(k>=1&&st.t>.6){const g=pageCan.getContext('2d'),X=(st.x+PW/2)/PW*PCW,Zc=(st.z-BED0)/LC*PCH,w=.40/PW*PCW,h=.147/LC*PCH;
+    if(k>=1&&st.t>.6){const g=pageCan.getContext('2d'),X=(st.x+PW/2)/PW*PCW,Zc=(st.z-BED0)/LC*PCH,w=.38/PW*PCW,h=.139/LC*PCH;
       pageStickers.push({c:st.c,X,Z:Zc,w,h,ang:st.ang});drawPageStickers(g);pageTex.needsUpdate=true;
       scene.remove(st.m);st.m.geometry.dispose();st.m.material.map.dispose();st.m.material.dispose();stickers.splice(i,1);}}}
 

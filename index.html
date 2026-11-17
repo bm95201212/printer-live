@@ -842,7 +842,7 @@ function ensureSong(){
   if(songEl)return;songEl=new Audio();songEl.preload='auto';
   songEl.addEventListener('ended',()=>playSong(songIdx+1));
   songEl.addEventListener('playing',()=>{songErr=0;});
-  songEl.addEventListener('error',()=>{songErr++;if(songErr>=songs.length){stopSong();banner('Файлы не играют');return;}banner('Этот файл не играет, следующий…');setTimeout(()=>playSong(songIdx+1),600);});
+  songEl.addEventListener('error',()=>{songErr++;if(songErr>=songs.length){stopSong(streamMode);if(!streamMode)banner('Файлы не играют');return;}if(!streamMode)banner('Этот файл не играет, следующий…');setTimeout(()=>playSong(songIdx+1),600);});
   if(ensureAC()){try{const src=AC.createMediaElementSource(songEl);songGain=AC.createGain();songGain.gain.value=songVol;analyser=AC.createAnalyser();analyser.fftSize=256;anData=new Uint8Array(analyser.frequencyBinCount);src.connect(analyser);src.connect(songGain);songGain.connect(master);   /* analyser reads the song before the volume, so the beat effects stay the same */}catch(_){analyser=null;songGain=null;}}
   applySongVol();
 }
@@ -859,8 +859,8 @@ function playSong(i){
   if(!songs.length)return;songIdx=((i%songs.length)+songs.length)%songs.length;ensureSong();
   if(musicMode)setMusic(0,true);
   songEl.src=songs[songIdx].url;songOn=true;
-  try{const pr=songEl.play();if(pr&&pr.catch)pr.catch(()=>{songOn=false;updSongUI();banner('Песня не включилась — нажмите ▶');});}catch(_){}
-  banner('🎶 '+songs[songIdx].name);updSongUI();
+  try{const pr=songEl.play();if(pr&&pr.catch)pr.catch(()=>{songOn=false;updSongUI();if(!streamMode)banner('Песня не включилась — нажмите ▶');});}catch(_){}
+  if(!streamMode)banner('🎶 '+songs[songIdx].name);updSongUI();   /* on stream the song name is not shown to viewers */
 }
 function stopSong(silent){if(songEl)songEl.pause();songOn=false;updSongUI();if(!silent)banner('Песня остановлена');}
 function songBtn(){if(!songs.length){$('songfile').click();return;}$('smenu').classList.toggle('open');updSongUI();}

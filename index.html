@@ -143,6 +143,8 @@ body.stream #sline{display:block;position:absolute;left:8px;right:8px;top:calc(1
 body.stream #banner{top:calc(12.5% + 36px)}
 body.stream #thanks{top:55%}
 body.stream #ctrl{transition:opacity .4s}
+body.stream #ctrl{flex-wrap:wrap;justify-content:center;left:3vw;right:3vw;transform:none;max-width:none;row-gap:5px}   /* all buttons fit: second row on narrow phones */
+@media (max-width:520px){body.stream #ctrl button{padding:5px 7px;min-width:32px;font-size:11px}}
 body.stream #ctrl.hide{opacity:0;pointer-events:none}
 body.stream .board .bt{display:none}
 #deck{display:none}

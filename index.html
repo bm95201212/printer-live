@@ -298,7 +298,7 @@ body.stream #sndmenu{right:auto;left:50%;transform:translateX(-50%);top:calc(env
         <h3>Сбор монет</h3>
         <p>Когда соберём цель — салют над столом</p>
         <div class="bar"><i id="fbar"></i></div>
-        <div class="row"><span>Салют</span><span id="ftxt">0 / 2 000</span></div>
+        <div class="row"><span>Салют</span><span id="ftxt">0 / 500</span></div>
       </div>
     </div>
     <div class="who">Кто:<input id="who" maxlength="16" placeholder="ваше имя (пусто — случайное)"><button class="ph" id="photo">📷</button><button class="efir" id="efir">📺 Эфир</button></div>
@@ -323,7 +323,7 @@ const GIFTS=[
 ];
 const SHORT={rose:'печать',donut:'большое',gold:'супер'};
 const NAMES=['Айгерім','Бекжан','Дана','Нұрлан','Аружан','Ержан','Мадина','Әсем','Дәулет','Ақбота','Санжар','Томирис','Арман','Жансая','Ерлан','Гүлназ','Қуаныш','Аяулым','Тимур','Сабина','Алина','Максим','Катя','Дима','Asel_kz','Captain','Bakytzhan T.','beezy','zhaksonn'];
-const FIRE_GOAL=2000, GAL_GOAL=20, MAXQ=40, MAXQ_BIG=200;   /* roses: 40 waiting at most; paid big cards (donut, diamond, lion…) are never dropped up to 200 */
+const FIRE_GOAL=500, GAL_GOAL=20, MAXQ=40, MAXQ_BIG=200;   /* roses: 40 waiting at most; paid big cards (donut, diamond, lion…) are never dropped up to 200 */
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 
 /* ---------- ui ---------- */
@@ -376,7 +376,7 @@ function updUI(){
   $('gbar').style.width=Math.min(100,galCount%GAL_GOAL/GAL_GOAL*100)+'%';
   $('gtxt').textContent=(galCount%GAL_GOAL)+' / '+GAL_GOAL+(galCount>=GAL_GOAL?' (всего '+galCount+')':'');
   $('sgt').textContent=(galCount%GAL_GOAL)+' / '+GAL_GOAL;$('sgb').style.width=$('gbar').style.width;
-  $('sft').textContent=fmt(fireCoins)+'/'+(FIRE_GOAL/1000)+'k';$('sfb').style.width=$('fbar').style.width;
+  $('sft').textContent=fmt(fireCoins)+'/'+fmt(FIRE_GOAL);$('sfb').style.width=$('fbar').style.width;
   $('snow').textContent=job?job.g.e+' '+job.name:'—';
   $('sq').textContent=queue.length;
   {$('sline').innerHTML=podiumHTML()+'<span class="goal"><b>🎆 Салют</b><i><u style="width:'+Math.min(100,fireCoins/FIRE_GOAL*100).toFixed(1)+'%"></u></i><s>'+fmt(fireCoins)+' / '+fmt(FIRE_GOAL)+'</s></span><span class="pr"><span>⏳ Очередь: '+queue.length+'</span></span>';}   /* viewers see only the queue; the gallery counter is for the owner (panel) */
@@ -1028,7 +1028,8 @@ $('photofile').addEventListener('change',e=>{const f=e.target.files&&e.target.fi
 /* ---------- gifts ---------- */
 function sendGift(g,name){
   coins+=g.cost;fireCoins+=g.cost;flyEmoji(g.e);
-  if(fireCoins>=FIRE_GOAL){fireCoins-=FIRE_GOAL;banner('🎆 САЛЮТ-ШОУ! Спасибо, зрители!');salute();party=6;}
+  if(fireCoins>=FIRE_GOAL){fireCoins%=FIRE_GOAL;   /* one show per goal reached; a huge gift does not leave a pile of shows */
+    banner('🎆 САЛЮТ-ШОУ! Спасибо, зрители!');salute();party=6;}
   const who=name||pick(NAMES);
   toast(g.e+' <b>'+esc(who)+'</b> — '+g.name+' ('+g.cost+')');
   lastGiftT=T;duckHop=.7;const woke=sleeping;if(woke)wakeUp(who,g);

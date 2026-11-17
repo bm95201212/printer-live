@@ -621,6 +621,15 @@ function drawCard(g,w,h,tier,name,top){
 }
 function blankStrip(){const g=stripCan.getContext('2d');paperBg(g,CW,CH*SLOTS);stripTex.needsUpdate=true;}
 blankStrip();paperBg(pageCan.getContext('2d'),PCW,PCH);pageTex.needsUpdate=true;
+/* Android Chrome may wipe 2D canvases while the app is in the background (the paper then turns black).
+   Repaint blank paper when that happens: on the browser's restore event and as a check before each print. */
+function paperLost(c){try{return c.getContext('2d').getImageData(3,3,1,1).data[3]===0;}catch(_){return false;}}
+function paperFix(){let fixed=false;
+  if(paperLost(pageCan)){paperBg(pageCan.getContext('2d'),PCW,PCH);pageTex.needsUpdate=true;slotsUsed.fill(false);used=0;fixed=true;}
+  if(paperLost(stripCan)){blankStrip();fixed=true;}
+  return fixed;}
+[pageCan,stripCan].forEach(c=>c.addEventListener('contextrestored',()=>setTimeout(paperFix,0)));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(paperFix,300);});
 /* feed: the finished page becomes the first slot of the paper strip, the strip rolls one page forward over the edge */
 function startFeed(){
   pFeedStart();
@@ -836,6 +845,7 @@ function startJob(){
   beginPrint();
 }
 function beginPrint(){
+  try{paperFix();}catch(_){}
   const speed=1+Math.min(.5,queue.length*.1);printDur=DUR[job.g.id]/speed;
   if(isFull(job.g)){P=fullP;const g=P.can.getContext('2d');g.setTransform(PCW/768,0,0,PCW/768,0,0);drawCard(g,768,714,job.g.id,job.name,topNames()[0]===job.name);g.setTransform(1,0,0,1,0,0);
     P.m.position.set(0,P.m.position.y,BED0+LC/2);pz0=BED0;pz1=BED0+LC;px0=0;pxw=PW/2;P.nb=MODES[pm].fB||16;P.mode=pm;job.slot=-1;

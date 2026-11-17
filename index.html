@@ -670,6 +670,7 @@ function startFeed(){
   pFeedStart();
   const g=stripCan.getContext('2d');g.drawImage(pageCan,0,0,CW,CH);stripTex.offset.y=0;stripTex.needsUpdate=true;
   paperBg(pageCan.getContext('2d'),PCW,PCH);pageStickers.length=0;pageTex.needsUpdate=true;pageMesh.visible=false;
+  try{dropFallingStickers();}catch(_){}
   phase='feed';phaseT=0;
 }
 function endFeed(){
@@ -904,7 +905,7 @@ function addThumb(can){try{const t=document.createElement('canvas');t.width=180;
 function finishPrint(){
   pFinish();
   const g=pageCan.getContext('2d');
-  if(job.slot<0){g.drawImage(P.can,0,0);used=GC*GR;}
+  if(job.slot<0){g.drawImage(P.can,0,0);used=GC*GR;pageStickers.length=0;}
   else{g.drawImage(P.can,(job.slot%GC)*SW,Math.floor(job.slot/GC)*SH);slotsUsed[job.slot]=true;used++;}
   bakeBorder(job.rect);edges.forEach(m=>m.visible=false);
   drawPageStickers(g);   /* a sticker stays on top of cards printed later */
@@ -1185,7 +1186,7 @@ function drawPageStickers(g){pageStickers.forEach(p=>{g.save();g.translate(p.X,p
 const pendingFollows=[];
 function followSticker(name){banner('➕ Спасибо за подписку, '+name+'!');pendingFollows.push(String(name));}
 function freeSlotForSticker(){if(phase==='feed'||used>=GC*GR)return -1;
-  const busy=job&&job.slot>=0?job.slot:-1,fullJob=job&&job.slot<0;if(fullJob)return -1;
+  const busy=job&&job.slot>=0?job.slot:-1,fullJob=(job&&(job.slot<0||isFull(job.g)))||(queue.length&&isFull(queue[0].g));if(fullJob)return -1;
   const free=[];slotsUsed.forEach((u,i)=>{if(!u&&i!==busy)free.push(i);});return free.length?pick(free):-1;}
 function spawnSticker(name,sl){slotsUsed[sl]=true;used++;
   const c=document.createElement('canvas');c.width=600;c.height=220;const a=c.getContext('2d');
@@ -1197,7 +1198,9 @@ function spawnSticker(name,sl){slotsUsed[sl]=true;used++;
   const m=new THREE.Mesh(new THREE.PlaneGeometry(.38,.139),new THREE.MeshBasicMaterial({map:tex,transparent:true}));
   const sw=PW/GC,sh=LC/GR,x=-PW/2+sw*(sl%GC+.5),z=BED0+sh*(Math.floor(sl/GC)+.5),ang=(Math.random()<.5?-1:1)*(.08+Math.random()*.1);
   m.rotation.set(-Math.PI/2,0,ang);m.position.set(x,Y0+.25,z);m.renderOrder=6;scene.add(m);
-  stickers.push({m,c,x,z,ang,t:0});}
+  stickers.push({m,c,x,z,ang,t:0,name});}
+function dropFallingStickers(){for(let i=stickers.length-1;i>=0;i--){const st=stickers[i];pendingFollows.unshift(st.name);
+  scene.remove(st.m);st.m.geometry.dispose();st.m.material.map.dispose();st.m.material.dispose();stickers.splice(i,1);}}
 function updStickers(dt){
   if(pendingFollows.length&&!stickers.length){const sl=freeSlotForSticker();if(sl>=0)spawnSticker(pendingFollows.shift(),sl);}
   for(let i=stickers.length-1;i>=0;i--){const st=stickers[i];

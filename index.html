@@ -333,7 +333,7 @@ GIFTS.forEach(g=>{
 {const b=document.createElement('button');b.className='gift';const g=MEGA_TEST;
   b.innerHTML='<span class="e">'+g.e+'</span><div><b>'+g.name+'</b><span class="c">'+g.cost+' монет</span><span class="d">'+g.desc+'</span></div>';
   b.addEventListener('click',()=>{const n=$('who').value.trim();sendGift(g,n||null);});$('gifts').appendChild(b);}
-[['🔥','Двойная печать','тест: 2 минуты 1 роза = 2 фото',()=>hhStart()],['😴','Сон принтера','тест: принтер засыпает',()=>{sleepNow();}]].forEach(([e,n,d,f])=>{const b=document.createElement('button');b.className='gift';
+[['🎄','Новогодняя рамка','тест: авто → вкл → выкл',function(){const nx={auto:'on',on:'off',off:'auto'}[nyMode()];try{localStorage.setItem('nyForce',nx);}catch(_){}banner('🎄 Новогодняя рамка: '+{auto:'авто (1 дек – 10 янв)',on:'включена',off:'выключена'}[nx]);}],['🔥','Двойная печать','тест: 2 минуты 1 роза = 2 фото',()=>hhStart()],['😴','Сон принтера','тест: принтер засыпает',()=>{sleepNow();}]].forEach(([e,n,d,f])=>{const b=document.createElement('button');b.className='gift';
   b.innerHTML='<span class="e">'+e+'</span><div><b>'+n+'</b><span class="d">'+d+'</span></div>';b.addEventListener('click',f);$('gifts').appendChild(b);});
 GIFTS.forEach(g=>{const c=document.createElement('button');c.className='chip';
   c.innerHTML='<span class="e">'+g.e+'</span><div><span class="c">'+g.cost+'</span><span class="l">'+SHORT[g.id]+'</span></div>';
@@ -609,11 +609,14 @@ function nameFit2(g,name,x,y,size,fillStyle,maxW){const one=fitName(g,name,size,
 function nameText(g,name,x,y,size,fillStyle,maxW){g.font='800 '+size+'px Montserrat, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillStyle=fillStyle;g.fillText(name,x,y,maxW);}
 let cardNo=0;
 let lastInset=[.04,.04,.01];
+/* New Year frame: on by itself from 1 December to 10 January; the test button can force it on / off */
+function nyMode(){try{return localStorage.getItem('nyForce')||'auto';}catch(_){return 'auto';}}
+function nyOn(){const m=nyMode();if(m==='on')return true;if(m==='off')return false;const d=new Date(),mo=d.getMonth(),day=d.getDate();return mo===11||(mo===0&&day<=10);}
 function drawSmall(g,w,h,tier,name){
   cardNo++;g.fillStyle=PAPER;g.fillRect(0,0,w,h);for(let i=0;i<300;i++){g.fillStyle='rgba(120,100,70,'+(Math.random()*.05)+')';g.fillRect(Math.random()*w,Math.random()*h,1.5,1.5);}
   const col=tier==='rose'?'#151515':'#c2185b';
   const ix=10+Math.random()*14,iy=10+Math.random()*12;lastInset=[ix/w,iy/h,3.5/w];
-  const RF=FRAMES.rose;
+  const NF=FRAMES.ny,RF=nyOn()&&NF.img.complete&&NF.img.naturalWidth?NF:FRAMES.rose;   /* New Year frame from 1 Dec to 10 Jan */
   if(tier==='rose'&&RF.img.complete&&RF.img.naturalWidth){   /* simple rose frame (generated art, 1024 px, white cut out) */
     const k=RF.k,cx=w/2,cy=125,left=cx-RF.hx*k,top=cy-RF.hy*k;
     drawAvatar(g,cx,cy,RF.hr*k*RF.rk,name,false);g.drawImage(RF.img,left,top,1024*k,1024*k);
@@ -628,7 +631,7 @@ function drawSmall(g,w,h,tier,name){
   [-1,1].forEach(d=>heart(g,cx+d*(tw/2+18),ny,14,tier==='rose'?(d<0?'#c62828':'#222'):'#e53935'));
 }
 /* VIP / SUPER VIP picture frames (generated art, white cut out); hole = measured centre circle of each frame (1024 px image) */
-const FRAMES={rose:{src:'img/frame_rose.webp',hx:512,hy:506.5,hr:275.8,k:.305,rk:1.04},donut:{src:'img/frame_vip.webp',hx:512.4,hy:495.4,hr:251.9,bt:50,k:.7,rk:.99},gold:{src:'img/frame_super.webp',hx:512,hy:552.4,hr:199.8,bt:60,k:.67,rk:1.03}};
+const FRAMES={rose:{src:'img/frame_rose.webp',hx:512,hy:506.5,hr:275.8,k:.305,rk:1.04},ny:{src:'img/frame_ny.webp',hx:511.5,hy:511.5,hr:364.5,k:.2307,rk:1.025},donut:{src:'img/frame_vip.webp',hx:512.4,hy:495.4,hr:251.9,bt:50,k:.7,rk:.99},gold:{src:'img/frame_super.webp',hx:512,hy:552.4,hr:199.8,bt:60,k:.67,rk:1.03}};
 Object.values(FRAMES).forEach(F=>{const im=new Image();im.crossOrigin='anonymous';im.src=F.src;F.img=im;});
 function framedCard(g,w,h,tier,name){
   const F=FRAMES[tier],im=F.img;cardNo++;paperBg(g,w,h);

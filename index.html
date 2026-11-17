@@ -315,7 +315,7 @@ const GIFTS=[
 ];
 const SHORT={rose:'печать',donut:'большое',gold:'супер'};
 const NAMES=['Айгерім','Бекжан','Дана','Нұрлан','Аружан','Ержан','Мадина','Әсем','Дәулет','Ақбота','Санжар','Томирис','Арман','Жансая','Ерлан','Гүлназ','Қуаныш','Аяулым','Тимур','Сабина','Алина','Максим','Катя','Дима','Asel_kz','Captain','Bakytzhan T.','beezy','zhaksonn'];
-const FIRE_GOAL=2000, GAL_GOAL=20, MAXQ=40;
+const FIRE_GOAL=2000, GAL_GOAL=20, MAXQ=40, MAXQ_BIG=200;   /* roses: 40 waiting at most; paid big cards (donut, diamond, lion…) are never dropped up to 200 */
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 
 /* ---------- ui ---------- */
@@ -892,7 +892,8 @@ const isFull=g=>g.cost>=30;
 const slotsUsed=new Array(GC*GR).fill(false);let used=0;
 const thumbs=[];
 function enqueue(name,g){
-  if(queue.length>=MAXQ){const i=queue.findIndex(j=>j.g.cost<30);if(i>=0)queue.splice(i,1);else return;}
+  if(isFull(g)){if(queue.filter(j=>isFull(j.g)).length>=MAXQ_BIG)return;}
+  else if(queue.filter(j=>!isFull(j.g)).length>=MAXQ){let i=queue.findIndex(j=>!isFull(j.g)&&j.g.free);if(i<0)i=queue.findIndex(j=>!isFull(j.g));if(i>=0)queue.splice(i,1);}
   const j={name,g};
   if(g.cost>=100){const i=queue.findIndex(q=>q.g.cost<g.cost);if(i>=0)queue.splice(i,0,j);else queue.push(j);}else queue.push(j);
   updUI();
@@ -1131,7 +1132,7 @@ document.addEventListener('pointerdown',function first(){if(snd)pAudio();documen
 const clock=new THREE.Clock();let T=0,buzzT=0;
 function frame(){
   const dt=Math.min(.05,clock.getDelta());T+=dt;party=Math.max(0,party-dt);
-  phaseT+=dt;
+  phaseT+=dt*(1+Math.min(.8,Math.max(0,queue.length-6)*.04));   /* long queue -> the whole cycle runs up to 1.8x faster */
   /* between prints the head waits where it stopped; after a pause it goes back to its parking place */
   idleT=phase==='idle'?idleT+dt:0;if(idleT>2.5){parkZ=BED0-.06;parkX=.47;}
   let gz=parkZ,hx=parkX,mv=false,snap=false;

@@ -1154,20 +1154,20 @@ $('auto').addEventListener('click',toggleAuto);$('cauto').addEventListener('clic
 /* ---------- follow → a «thank you» sticker drops onto the paper and stays printed there ---------- */
 const stickers=[];
 function followSticker(name){banner('➕ Спасибо за подписку, '+name+'!');
-  const c=document.createElement('canvas');c.width=300;c.height=110;const a=c.getContext('2d');
-  a.fillStyle='#fff';a.beginPath();a.roundRect?a.roundRect(4,4,292,102,18):a.rect(4,4,292,102);a.fill();
-  const gr=a.createLinearGradient(0,0,300,0);gr.addColorStop(0,'#ff4f8b');gr.addColorStop(1,'#ffb347');a.fillStyle=gr;a.beginPath();a.roundRect?a.roundRect(11,11,278,88,13):a.rect(11,11,278,88);a.fill();
-  a.fillStyle='#fff';a.textAlign='center';a.textBaseline='middle';a.font='800 22px Montserrat, sans-serif';a.fillText('➕ Спасибо за подписку',150,38,264);
-  a.font='900 30px Montserrat, sans-serif';a.fillText(String(name).slice(0,18),150,74,264);
+  const c=document.createElement('canvas');c.width=600;c.height=220;const a=c.getContext('2d');
+  a.fillStyle='#fff';a.beginPath();a.roundRect?a.roundRect(6,6,588,208,34):a.rect(6,6,588,208);a.fill();
+  const gr=a.createLinearGradient(0,0,600,0);gr.addColorStop(0,'#ff4f8b');gr.addColorStop(1,'#ffb347');a.fillStyle=gr;a.beginPath();a.roundRect?a.roundRect(20,20,560,180,26):a.rect(20,20,560,180);a.fill();
+  a.fillStyle='#fff';a.textAlign='center';a.textBaseline='middle';a.font='800 46px Montserrat, sans-serif';a.fillText('➕ Спасибо за подписку',300,74,530);
+  a.font='900 64px Montserrat, sans-serif';a.fillText(String(name).slice(0,18),300,148,530);
   const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;
-  const m=new THREE.Mesh(new THREE.PlaneGeometry(.24,.088),new THREE.MeshBasicMaterial({map:tex,transparent:true}));
-  const side=Math.random()<.5?-1:1,x=side*(.2+Math.random()*.05),z=BED0+LC*(.07+Math.random()*.03),ang=side*(.12+Math.random()*.14);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(.40,.147),new THREE.MeshBasicMaterial({map:tex,transparent:true}));
+  const side=Math.random()<.5?-1:1,x=side*(.12+Math.random()*.05),z=BED0+LC*(.15+Math.random()*.03),ang=side*(.12+Math.random()*.14);
   m.rotation.set(-Math.PI/2,0,ang);m.position.set(x,Y0+.25,z);m.renderOrder=6;scene.add(m);
   stickers.push({m,c,x,z,ang,t:0});}
 function updStickers(dt){for(let i=stickers.length-1;i>=0;i--){const st=stickers[i];
     if(phase==='feed'){st.m.visible=false;continue;}st.m.visible=true;   /* wait while the paper is moving */
     st.t+=dt;const k=Math.min(1,st.t/.45),e=1-Math.pow(1-k,3);st.m.position.y=Y0+.25-(.25-.004)*e;const sc=1.5-.5*e;st.m.scale.set(sc,sc,1);
-    if(k>=1&&st.t>.6){const g=pageCan.getContext('2d'),X=(st.x+PW/2)/PW*PCW,Zc=(st.z-BED0)/LC*PCH,w=.24/PW*PCW,h=.088/LC*PCH;
+    if(k>=1&&st.t>.6){const g=pageCan.getContext('2d'),X=(st.x+PW/2)/PW*PCW,Zc=(st.z-BED0)/LC*PCH,w=.40/PW*PCW,h=.147/LC*PCH;
       g.save();g.translate(X,Zc);g.rotate(-st.ang);g.drawImage(st.c,-w/2,-h/2,w,h);g.restore();pageTex.needsUpdate=true;
       scene.remove(st.m);st.m.geometry.dispose();st.m.material.map.dispose();st.m.material.dispose();stickers.splice(i,1);}}}
 

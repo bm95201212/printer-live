@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Дауыс сынағы</title>
+<style>
+  :root { --bg:#F6F2F0; --card:#fff; --ink:#2B1A20; --muted:#6F5F65; --line:#EFE7E9; --bordo:#6E1F3A; --gold:#FBF1DA; --green:#1F6B4A; --red:#A3243F; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:520px; margin:0 auto; padding:16px 14px 40px; display:flex; flex-direction:column; gap:14px; }
+  h1 { font-size:22px; margin:6px 0 0; }
+  h2 { font-size:17px; margin:0 0 8px; }
+  p { margin:0; }
+  .muted { color:var(--muted); font-size:14px; }
+  .card { background:var(--card); border-radius:18px; padding:14px; box-shadow:0 2px 10px rgba(43,26,32,.06); display:flex; flex-direction:column; gap:10px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  button { min-height:52px; flex:1 1 140px; border:0; border-radius:14px; padding:10px 14px; font:700 16px/1.2 inherit; background:var(--bordo); color:#fff; cursor:pointer; }
+  button.soft { background:#FBF8F8; color:var(--bordo); border:1px solid var(--line); }
+  button:disabled { opacity:.5; }
+  button.on { background:var(--red); }
+  .box { background:#FBF8F8; border:1px solid var(--line); border-radius:12px; padding:10px 12px; min-height:48px; font-size:17px; font-weight:600; word-break:break-word; }
+  .tip { background:var(--gold); border-radius:12px; padding:10px 12px; font-size:14px; font-weight:600; color:#5A4520; }
+  .ok { color:var(--green); font-weight:700; }
+  .bad { color:var(--red); font-weight:700; }
+  ul { margin:0; padding-left:18px; font-size:14px; color:var(--muted); }
+  pre { margin:0; white-space:pre-wrap; word-break:break-word; font:13px/1.4 ui-monospace,Menlo,Consolas,monospace; background:#FBF8F8; border:1px solid var(--line); border-radius:12px; padding:10px; max-height:260px; overflow:auto; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Дауыс сынағы</h1>
+  <p class="muted">Бұл бет ештеңе сақтамайды және ешқайда жібермейді. Тек осы телефонның дауысты қалай танитынын және қалай сөйлейтінін тексереді.</p>
+
+  <section class="card" aria-labelledby="h-say">
+    <h2 id="h-say">1. Телефон сөйлей ала ма</h2>
+    <p id="voices" class="muted">Дауыстар тексерілуде…</p>
+    <div class="row">
+      <button type="button" id="say-kk">Қазақша айтсын</button>
+      <button type="button" id="say-ru" class="soft">Орысша айтсын</button>
+    </div>
+    <p class="muted">Қазақша басқанда «Жаңа тапсырыс түсті. Бүгін сайтқа қырық сегіз адам кірді» деуі керек. Анық естілді ме, соны маған жазыңыз.</p>
+  </section>
+
+  <section class="card" aria-labelledby="h-hear">
+    <h2 id="h-hear">2. Телефон сөзді тани ма</h2>
+    <p id="support" class="muted"></p>
+    <div class="tip">Батырманы басыңыз, микрофонға рұқсат беріңіз, сосын анық айтыңыз: «Бүгін неше адам кірді»</div>
+    <div class="row">
+      <button type="button" id="hear-kk">Қазақша тыңдау</button>
+      <button type="button" id="hear-ru" class="soft">Орысша тыңдау</button>
+    </div>
+    <p class="muted">Естігені:</p>
+    <div class="box" id="heard" role="status" aria-live="polite">—</div>
+    <p class="muted">Жарвис осыны қай команда деп түсінер еді:</p>
+    <div class="box" id="command">—</div>
+    <p class="muted">Тағы айтып көріңіз: «Кеше», «Тапсырыстар», «Не күтіп тұр», «Жеті күн».</p>
+  </section>
+
+  <section class="card" aria-labelledby="h-log">
+    <h2 id="h-log">3. Нәтиже</h2>
+    <p class="muted">Сынап болған соң осы мәтінді көшіріп, Claude-қа жіберіңіз.</p>
+    <pre id="log"></pre>
+    <div class="row"><button type="button" id="copy" class="soft">Нәтижені көшіру</button></div>
+    <p id="copied" class="muted" role="status" aria-live="polite"></p>
+  </section>
+</main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var lines = [];
+  function log(text) {
+    lines.push(text);
+    $("log").textContent = lines.join("\n");
+  }
+  log("Браузер: " + navigator.userAgent);
+
+  /* ---------- 1. Сөйлеу ---------- */
+  var synth = window.speechSynthesis;
+  var norm = function (lang) { return String(lang || "").toLowerCase().replace("_", "-"); };
+  function voicesOf(prefix) {
+    if (!synth) return [];
+    return synth.getVoices().filter(function (v) { return norm(v.lang).indexOf(prefix) === 0; });
+  }
+  var voicesLogged = "";
+  function showVoices() {
+    if (!synth) {
+      $("voices").innerHTML = '<span class="bad">Бұл браузерде дауыс шығару жоқ.</span>';
+      $("say-kk").disabled = true; $("say-ru").disabled = true;
+      return;
+    }
+    var all = synth.getVoices();
+    var kk = voicesOf("kk"), ru = voicesOf("ru");
+    var text = "Барлық дауыс: " + all.length + " · қазақша: " + kk.length + " · орысша: " + ru.length;
+    $("voices").innerHTML = (kk.length ? '<span class="ok">Қазақша дауыс бар.</span> ' : all.length ? '<span class="bad">Қазақша дауыс тізімде жоқ.</span> ' : "") + text;
+    var line = "Дауыстар: барлығы " + all.length + "; kk: " + (kk.map(function (v) { return v.name + " (" + v.lang + ")"; }).join(", ") || "жоқ") + "; ru: " + (ru.map(function (v) { return v.name + " (" + v.lang + ")"; }).join(", ") || "жоқ");
+    if (line !== voicesLogged) { voicesLogged = line; log(line); }
+  }
+  showVoices();
+  if (synth) {
+    if (typeof synth.addEventListener === "function") synth.addEventListener("voiceschanged", showVoices);
+    setTimeout(showVoices, 800);
+    setTimeout(showVoices, 2500);
+  }
+  function say(prefix, lang, text) {
+    if (!synth) return;
+    try {
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = lang;
+      var voice = voicesOf(prefix)[0];
+      if (voice) u.voice = voice;
+      u.onstart = function () { log("Сөйлеу [" + lang + "]: басталды" + (voice ? " · дауыс: " + voice.name : " · дауыс таңдалмады")); };
+      u.onend = function () { log("Сөйлеу [" + lang + "]: аяқталды"); };
+      u.onerror = function (e) { log("Сөйлеу [" + lang + "]: ҚАТЕ " + (e && e.error ? e.error : "белгісіз")); };
+      synth.speak(u);
+    } catch (err) {
+      log("Сөйлеу [" + lang + "]: ҚАТЕ " + err);
+    }
+  }
+  $("say-kk").addEventListener("click", function () { say("kk", "kk-KZ", "Жаңа тапсырыс түсті. Бүгін сайтқа 48 адам кірді."); });
+  $("say-ru").addEventListener("click", function () { say("ru", "ru-RU", "Поступил новый заказ. Сегодня на сайт зашли 48 человек."); });
+
+  /* ---------- 2. Тану ---------- */
+  var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var COMMANDS = [
+    { name: "Бүгін", words: ["бүгін", "бугін", "бугин", "бүгин", "сегодня"] },
+    { name: "Кеше", words: ["кеше", "вчера"] },
+    { name: "7 күн", words: ["жеті күн", "жети кун", "апта", "7 күн", "7 кун", "недел", "семь дней", "7 дней"] },
+    { name: "Тапсырыстар", words: ["тапсырыс", "заказ"] },
+    { name: "Не күтіп тұр", words: ["күтіп", "кутип", "күтуде", "төлем", "толем", "ждёт", "ждет", "ждут", "оплат"] },
+    { name: "Кірушілер", words: ["кірді", "кирди", "кіруші", "адам", "зашл", "зашёл", "посетител", "человек"] },
+    { name: "Тоқта", words: ["тоқта", "токта", "стоп", "хватит"] }
+  ];
+  function commandOf(text) {
+    var low = text.toLowerCase();
+    var found = COMMANDS.filter(function (c) { return c.words.some(function (w) { return low.indexOf(w) !== -1; }); }).map(function (c) { return c.name; });
+    return found.length ? found.join(" + ") : "түсінбеді";
+  }
+  var ERRORS = {
+    "not-allowed": "Микрофонға рұқсат берілмеді.",
+    "service-not-allowed": "Браузер дауыс тану қызметіне рұқсат бермеді.",
+    "language-not-supported": "Бұл тіл танылмайды.",
+    "no-speech": "Дауыс естілмеді. Қайта айтып көріңіз.",
+    "audio-capture": "Микрофон табылмады.",
+    "network": "Интернет қатесі.",
+    "aborted": "Тоқтатылды."
+  };
+  var active = null;
+  if (!Recognition) {
+    $("support").innerHTML = '<span class="bad">Бұл браузерде дауыс тану жоқ.</span> Chrome-да ашып көріңіз.';
+    $("hear-kk").disabled = true; $("hear-ru").disabled = true;
+    log("Дауыс тану: браузерде ЖОҚ");
+  } else {
+    $("support").innerHTML = '<span class="ok">Браузерде дауыс тану бар.</span> Қазақшаны тани ма, соны тексереміз.';
+    log("Дауыс тану: браузерде бар");
+  }
+  function hear(lang, button, label) {
+    if (!Recognition) return;
+    if (active) { try { active.stop(); } catch (e) {} return; }
+    var rec;
+    try { rec = new Recognition(); } catch (err) { log("Тану [" + lang + "]: ҚАТЕ " + err); return; }
+    rec.lang = lang;
+    rec.interimResults = true;
+    rec.maxAlternatives = 3;
+    rec.continuous = false;
+    var finalText = "";
+    active = rec;
+    button.classList.add("on");
+    button.textContent = "Тыңдап тұр… (тоқтату)";
+    $("heard").textContent = "…";
+    $("command").textContent = "—";
+    rec.onresult = function (event) {
+      var text = "";
+      for (var i = 0; i < event.results.length; i++) {
+        var res = event.results[i];
+        text += res[0].transcript;
+        if (res.isFinal) {
+          var alts = [];
+          for (var j = 0; j < res.length; j++) alts.push('"' + res[j].transcript.trim() + '" (' + (res[j].confidence ? res[j].confidence.toFixed(2) : "?") + ")");
+          finalText = text.trim();
+          log("Тану [" + lang + "]: " + alts.join(" | ") + " → команда: " + commandOf(finalText));
+        }
+      }
+      $("heard").textContent = text.trim() || "…";
+      $("command").textContent = commandOf(text);
+    };
+    rec.onerror = function (event) {
+      var code = event && event.error ? event.error : "белгісіз";
+      $("heard").textContent = ERRORS[code] || ("Қате: " + code);
+      log("Тану [" + lang + "]: ҚАТЕ " + code);
+    };
+    rec.onend = function () {
+      active = null;
+      button.classList.remove("on");
+      button.textContent = label;
+      if (!finalText && $("heard").textContent === "…") { $("heard").textContent = "Ештеңе танылмады."; log("Тану [" + lang + "]: ештеңе танылмады"); }
+    };
+    try { rec.start(); } catch (err) {
+      active = null; button.classList.remove("on"); button.textContent = label;
+      log("Тану [" + lang + "]: ҚАТЕ " + err);
+    }
+  }
+  $("hear-kk").addEventListener("click", function () { hear("kk-KZ", $("hear-kk"), "Қазақша тыңдау"); });
+  $("hear-ru").addEventListener("click", function () { hear("ru-RU", $("hear-ru"), "Орысша тыңдау"); });
+
+  /* ---------- 3. Көшіру ---------- */
+  $("copy").addEventListener("click", function () {
+    var text = lines.join("\n");
+    var done = function (ok) { $("copied").textContent = ok ? "Көшірілді. Енді Claude-қа қойыңыз." : "Көшірілмеді — мәтінді ұзақ басып, қолмен белгілеп көшіріңіз."; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+    else done(false);
+  });
+})();
+</script>
+</body>
+</html>

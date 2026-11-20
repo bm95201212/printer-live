@@ -121,6 +121,26 @@ body.onair #gear{display:none}
 #st{margin-top:12px;padding:8px 10px;border-radius:8px;background:#0f121b;font-size:13px;white-space:pre-wrap}
 #log{margin-top:8px;padding:8px 10px;border-radius:8px;background:#0f121b;font:500 11.5px/1.45 ui-monospace,Menlo,Consolas,monospace;color:#b9c3d8;white-space:pre-wrap;word-break:break-word;min-height:40px}
 #pan .help{font-size:12px;color:#8f99ae;margin-top:8px;line-height:1.4}
+#pan .sec{margin-top:16px;padding-top:12px;border-top:1px solid #333a4f;font:700 15px Roboto,Arial,sans-serif}
+#pan input[type=range],#mini input[type=range]{flex:1;width:auto;min-width:0;height:44px;padding:0;border:0;background:none;accent-color:#3a7bff}
+.mchoice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.mchoice button.on{background:#3a5bff!important;border-color:#7d9bff!important}
+.mvolrow{display:flex;align-items:center;gap:10px;margin-top:8px}
+.mvolrow b{min-width:48px;text-align:right;font:700 16px Roboto,Arial,sans-serif}
+button.mnext:disabled{opacity:.45}
+#mline{margin-top:10px;font-size:13px;color:#c9d2e6;word-break:break-word}
+/* mini music panel for use on air: no username, key, link, log or file picker */
+#mini{display:none;position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 10px);
+  width:min(340px,calc(100vw - 20px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));
+  background:rgba(22,25,36,.96);color:#eef1f8;border-radius:16px;padding:12px;box-shadow:0 10px 40px rgba(0,0,0,.5);font:500 16px Roboto,Arial,sans-serif;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation}
+#mini.open{display:block}
+#mini button{min-height:48px;min-width:48px;font:700 16px Roboto,Arial,sans-serif;padding:8px 12px;border-radius:10px;border:1px solid #3a4157;background:#262b3c;color:#fff;cursor:pointer}
+#mini .mchoice{margin-top:0}
+#mini .mrow{display:flex;gap:8px;margin-top:10px}
+#mini .mrow .mnext{flex:1}
+#mini .mmsg{margin-top:8px;font-size:15px;color:#ffd28a;text-align:center}
+#mini .mmsg:empty{display:none}
 
 @media (prefers-reduced-motion:reduce){.mini{display:none}.hw.pop>svg{animation:none}.lines{transition:none!important}}
 </style>
@@ -167,9 +187,23 @@ body.onair #gear{display:none}
   <input id="link" readonly>
   <div class="note">Ссылка содержит ключ — не показывайте её в эфире</div>
   <button id="snd" class="wide">🔇 Звук клавиатуры</button>
+  <div class="sec">🎵 Музыка</div>
+  <div class="mchoice"><button data-m="off">Выкл</button><button data-m="rhythm">Ритм</button><button data-m="calm">Спокойная</button><button data-m="songs">Мои песни</button></div>
+  <div class="mvolrow"><input type="range" class="mvol" min="0" max="100" step="5" value="30" aria-label="Громкость музыки"><b class="mvolv">30%</b></div>
+  <button class="mnext wide">⏭ Следующая песня</button>
+  <button id="madd" class="wide">➕ Добавить песни</button>
+  <input type="file" id="songfile" accept="audio/*" multiple hidden>
+  <div id="mline"></div>
   <div id="st">Не подключено</div>
   <div id="log"></div>
-  <div class="help">Кнопка ⚙ скрывается, когда соединение открыто. Чтобы снова открыть это окно, нажмите 3 раза подряд в левый верхний угол экрана. Ключ хранится только в этом браузере.</div>
+  <div class="help">Кнопка ⚙ скрывается, когда соединение открыто. Чтобы снова открыть это окно, нажмите 3 раза подряд в левый верхний угол экрана. Музыку можно менять и в эфире: нажмите 3 раза подряд в правый верхний угол — откроется маленькое окно без ключа. Ключ хранится только в этом браузере. Песни из «Мои песни» общие с Принтером.</div>
+</div>
+
+<div id="mini" role="dialog" aria-label="Музыка">
+  <div class="mchoice"><button data-m="off">Выкл</button><button data-m="rhythm">Ритм</button><button data-m="calm">Спокойная</button><button data-m="songs">Мои песни</button></div>
+  <div class="mvolrow"><input type="range" class="mvol" min="0" max="100" step="5" value="30" aria-label="Громкость музыки"><b class="mvolv">30%</b></div>
+  <div class="mmsg"></div>
+  <div class="mrow"><button class="mnext">⏭ Следующая песня</button><button id="mx" aria-label="Закрыть">✕</button></div>
 </div>
 
 <script>
@@ -233,23 +267,133 @@ function keyFor(ch){
 function press(ch){const k=keyFor(ch);if(k){k.classList.add('lit');clearTimeout(k._t);k._t=setTimeout(()=>k.classList.remove('lit'),130);}
   click(ch==='\n'?'enter':ch===' '?'space':'key');}
 
-/* ---------- keyboard sound (Web Audio, off by default) ---------- */
-let actx=null,noise=null,sndOn=false;
+/* ---------- one AudioContext for the whole page (keyboard clicks + music) ---------- */
+/* created only inside the stage tap; resumed on tap, on pointerdown and when the page becomes visible again */
+let AC=null,musicBus=null,noiseBuf=null,clickBuf=null,audioTried=false;
+function makeAC(){
+  audioTried=true;
+  try{if(!AC){const C=window.AudioContext||window.webkitAudioContext;if(!C)return false;AC=new C();
+      musicBus=AC.createGain();musicBus.gain.value=musicTarget();
+      const out=AC.createGain();out.gain.value=.55;const comp=AC.createDynamicsCompressor();musicBus.connect(out);out.connect(comp);comp.connect(AC.destination);
+      noiseBuf=AC.createBuffer(1,AC.sampleRate,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+    resumeAC();return true;}catch(_){return false;}
+}
+function resumeAC(){try{if(AC&&AC.state!=='running'&&AC.state!=='closed'){const r=AC.resume();if(r&&r.catch)r.catch(()=>{});}}catch(_){}}
+
+/* keyboard click sound (off by default; separate from the music volume: goes straight to the speakers) */
+let sndOn=false;
 try{sndOn=localStorage.getItem('namesSound')==='1';}catch(_){}
-function ensureAudio(){if(!sndOn)return;try{if(!actx){const C=window.AudioContext||window.webkitAudioContext;if(C)actx=new C();}
-  if(actx&&actx.state==='suspended')actx.resume();}catch(_){}}
 function click(kind){
-  if(!sndOn||!actx||actx.state!=='running')return;
-  try{if(!noise){noise=actx.createBuffer(1,Math.floor(actx.sampleRate*.12),actx.sampleRate);const d=noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);}
-    const t=actx.currentTime,s=actx.createBufferSource(),f=actx.createBiquadFilter(),g=actx.createGain();
-    s.buffer=noise;f.type='bandpass';f.frequency.value=kind==='enter'?1100:kind==='space'?1700:rnd(2500,3200);f.Q.value=1.3;
+  if(!sndOn||!AC||AC.state!=='running')return;
+  try{if(!clickBuf){clickBuf=AC.createBuffer(1,Math.floor(AC.sampleRate*.12),AC.sampleRate);const d=clickBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);}
+    const t=AC.currentTime,s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();
+    s.buffer=clickBuf;f.type='bandpass';f.frequency.value=kind==='enter'?1100:kind==='space'?1700:rnd(2500,3200);f.Q.value=1.3;
     const peak=kind==='enter'?.55:.35,len=kind==='enter'?.09:.05;
     g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+len);
-    s.connect(f);f.connect(g);g.connect(actx.destination);s.start(t);s.stop(t+.12);}catch(_){}
+    s.connect(f);f.connect(g);g.connect(AC.destination);s.start(t);s.stop(t+.12);}catch(_){}
 }
 function sndUI(){$('snd').textContent=(sndOn?'🔊':'🔇')+' Звук клавиатуры: '+(sndOn?'вкл':'выкл');}
-$('snd').addEventListener('click',()=>{sndOn=!sndOn;try{localStorage.setItem('namesSound',sndOn?'1':'0');}catch(_){}ensureAudio();sndUI();});
+$('snd').addEventListener('click',()=>{sndOn=!sndOn;try{localStorage.setItem('namesSound',sndOn?'1':'0');}catch(_){}resumeAC();sndUI();});
 sndUI();
+
+/* ---------- music: one volume (0–100 %) for both sources, kept in this browser ---------- */
+const MSRC=['off','rhythm','calm','songs'];
+let musicSel=(()=>{try{const v=localStorage.getItem('namesMusic');return MSRC.includes(v)?v:'off';}catch(_){return 'off';}})();
+let musicVol=(()=>{try{const v=parseFloat(localStorage.getItem('namesMusicVol'));return isNaN(v)?30:Math.max(0,Math.min(100,Math.round(v)));}catch(_){return 30;}})();
+let ducked=false;
+function musicTarget(){return musicVol/100*(ducked?.4:1);}
+function applyGain(tc){try{const v=musicTarget();if(AC&&musicBus)musicBus.gain.setTargetAtTime(v,AC.currentTime,tc||.05);else if(songEl)songEl.volume=Math.max(0,Math.min(1,v));}catch(_){}}
+/* while a gift name is typed the music goes down to 40 % of the chosen volume */
+function duck(on){if(ducked===on)return;ducked=on;applyGain(.15);}
+
+/* built-in music: the printer's generated music (original, made in the browser) */
+let musicMode=0,mStart=0,nextT=0,mStep=0,schedIv=null;
+const STYLES=[null,{name:'Ритм',bpm:118},{name:'Спокойная',bpm:92}];
+const CHORDS=[[110,[220,261.63,329.63]],[87.31,[174.61,220,261.63]],[130.81,[261.63,329.63,392]],[98,[196,246.94,293.66]]];
+const PENTA=[440,523.25,587.33,659.25,783.99,880];
+function env(g,t,peak,att,dec){g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+att);g.gain.exponentialRampToValueAtTime(.0001,t+att+dec);}
+function kick(t,v){const o=AC.createOscillator(),g=AC.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);env(g,t,v,.003,.32);o.connect(g);g.connect(musicBus);o.start(t);o.stop(t+.4);}
+function noise(t,type,f,v,dur){const s=AC.createBufferSource();s.buffer=noiseBuf;const fl=AC.createBiquadFilter();fl.type=type;fl.frequency.value=f;const g=AC.createGain();env(g,t,v,.002,dur);s.connect(fl);fl.connect(g);g.connect(musicBus);s.start(t,Math.random()*.5);s.stop(t+dur+.05);}
+function tone(t,type,f,v,att,dec,lp){const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);let n=o;if(lp){const fl=AC.createBiquadFilter();fl.type='lowpass';fl.frequency.value=lp;fl.Q.value=3;o.connect(fl);n=fl;}env(g,t,v,att,dec);n.connect(g);g.connect(musicBus);o.start(t);o.stop(t+att+dec+.05);}
+function hype(){return false;}   /* the printer's party/disco/space states do not exist on this page */
+function schedule(k,t,sd){
+  const st=STYLES[musicMode];const s=k%16,bar=Math.floor(k/16)%4;const [root,ch]=CHORDS[bar];const club=musicMode===1;
+  if(club?s%4===0:(s===0||s===7||s===10))kick(t,club?.9:.7);
+  if(club?(s===4||s===12):s===8)noise(t,'bandpass',1600,club?.32:.18,.16);
+  if(club){if(s%4===2)noise(t,'highpass',7500,.16,.07);else if(hype()&&s%2===1)noise(t,'highpass',9000,.06,.03);}
+  else if(s%2===0)noise(t,'highpass',8000,.05,.04);
+  if(club){if(s%4===2)tone(t,'sawtooth',root,.2,.008,sd*1.6,520);if(s===14)tone(t,'sawtooth',root*1.5,.16,.008,sd*1.4,520);}
+  else if(s===0||s===10)tone(t,'sawtooth',root,.18,.02,sd*5,380);
+  if(s===0)ch.forEach(f=>tone(t,'triangle',f,club?.035:.05,.25,sd*15,1800));
+  if((hype()||bar===3)&&s%2===0){const f=PENTA[(s/2+bar*3)%PENTA.length];tone(t,club?'square':'triangle',f,club?.045:.05,.005,sd*1.5,2400);}
+}
+function startSched(){
+  const st=STYLES[musicMode];const sd=60/st.bpm/4;mStep=0;mStart=AC.currentTime+.06;nextT=mStart;
+  clearInterval(schedIv);schedIv=setInterval(()=>{if(!musicMode||!AC)return;
+    try{if(nextT<AC.currentTime-.1){while(nextT<AC.currentTime){nextT+=sd;mStep++;}}   /* the timer was paused (page hidden): skip, do not play a burst */
+      while(nextT<AC.currentTime+.12){schedule(mStep,nextT,sd);nextT+=sd;mStep++;}}catch(_){}},25);
+}
+function stopSynth(){musicMode=0;clearInterval(schedIv);schedIv=null;}
+
+/* «Мои песни»: the printer's song list (same IndexedDB), played one after another in a loop */
+let songs=[],songIdx=-1,songEl=null,songOn=false,songErr=0,songsLoaded=false,playTok=0;
+function ensureSong(){
+  if(songEl)return;songEl=document.createElement('audio');songEl.id='songel';songEl.preload='auto';songEl.setAttribute('playsinline','');songEl.style.display='none';document.body.appendChild(songEl);
+  songEl.addEventListener('ended',()=>playSong(songIdx+1));
+  songEl.addEventListener('playing',()=>{songErr=0;});
+  songEl.addEventListener('error',()=>{if(!songOn)return;songErr++;if(songErr>=songs.length){stopSong();return;}setTimeout(()=>{if(songOn)playSong(songIdx+1);},600);});
+  if(AC&&musicBus){try{AC.createMediaElementSource(songEl).connect(musicBus);}catch(_){}}
+  applyGain();
+}
+function playSong(i){
+  if(!songs.length){stopSong();return;}songIdx=((i%songs.length)+songs.length)%songs.length;ensureSong();
+  songEl.src=songs[songIdx].url;songOn=true;const tok=++playTok;
+  try{const pr=songEl.play();if(pr&&pr.catch)pr.catch(e=>{if(tok===playTok&&!(e&&e.name==='AbortError')&&songErr===0){songOn=false;musicUI();}});}catch(_){}
+  musicUI();
+}
+function stopSong(){try{if(songEl)songEl.pause();}catch(_){}songOn=false;musicUI();}
+/* start whatever source is chosen (only after the first stage tap) */
+function applyMusic(){
+  if(!audioTried){musicUI();return;}
+  try{
+    if(musicSel==='rhythm'||musicSel==='calm'){stopSong();const m=musicSel==='rhythm'?1:2;if(AC&&musicBus){if(musicMode!==m){musicMode=m;startSched();}}else stopSynth();}
+    else if(musicSel==='songs'){stopSynth();if(songs.length){if(!songOn){songErr=0;playSong(Math.max(0,songIdx));}}else stopSong();}
+    else{stopSynth();stopSong();}
+  }catch(_){}
+  musicUI();
+}
+function setSource(m){if(!MSRC.includes(m))return;musicSel=m;try{localStorage.setItem('namesMusic',m);}catch(_){}applyMusic();}
+function setVol(v){musicVol=Math.max(0,Math.min(100,Math.round(+v||0)));try{localStorage.setItem('namesMusicVol',String(musicVol));}catch(_){}applyGain();musicUI();}
+function musicUI(){
+  document.querySelectorAll('.mchoice button').forEach(b=>b.classList.toggle('on',b.dataset.m===musicSel));
+  document.querySelectorAll('.mvol').forEach(r=>{if(+r.value!==musicVol)r.value=musicVol;});
+  document.querySelectorAll('.mvolv').forEach(b=>b.textContent=musicVol+'%');
+  const empty=musicSel==='songs'&&songsLoaded&&!songs.length;
+  document.querySelectorAll('.mnext').forEach(b=>b.disabled=!(musicSel==='songs'&&songs.length));
+  document.querySelectorAll('#mini .mmsg').forEach(e=>e.textContent=empty?'Список песен пуст':'');
+  $('mline').textContent=empty?'Список песен пуст':('Песен: '+songs.length+(songOn&&songIdx>=0&&songs[songIdx]?' · Сейчас: '+songs[songIdx].name:''));   /* only in the hidden settings panel */
+}
+document.querySelectorAll('.mchoice button').forEach(b=>b.addEventListener('click',()=>setSource(b.dataset.m)));
+document.querySelectorAll('.mvol').forEach(r=>r.addEventListener('input',()=>setVol(r.value)));
+document.querySelectorAll('.mnext').forEach(b=>b.addEventListener('click',()=>{if(audioTried&&musicSel==='songs'&&songs.length){songErr=0;playSong(songOn?songIdx+1:Math.max(0,songIdx));}}));
+$('madd').addEventListener('click',()=>$('songfile').click());
+$('songfile').addEventListener('change',e=>{
+  const fs=[...e.target.files].filter(f=>/^audio\//.test(f.type)||/\.(mp3|m4a|aac|ogg|wav|opus|flac)$/i.test(f.name));const start=songs.length;
+  fs.forEach(f=>{const name=f.name.replace(/\.[^.]+$/,'').slice(0,40);songs.push({name,url:URL.createObjectURL(f)});songSave(name,f);});
+  e.target.value='';if(!fs.length){$('mline').textContent='Аудиофайл не найден';return;}
+  if(musicSel==='songs'&&audioTried&&!songOn)playSong(start);else musicUI();
+});
+/* the same IndexedDB as the printer: 'printerSongs' v1, store 's', records {name, blob} — never change it */
+function songDB(){return new Promise((res,rej)=>{try{const r=indexedDB.open('printerSongs',1);r.onupgradeneeded=()=>r.result.createObjectStore('s',{autoIncrement:true});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e);}});}
+function songSave(name,blob){songDB().then(db=>{db.transaction('s','readwrite').objectStore('s').add({name,blob});}).catch(()=>{});}
+songDB().then(db=>{const q=db.transaction('s').objectStore('s').getAll();q.onsuccess=()=>{(q.result||[]).forEach(x=>{if(x&&x.blob)songs.push({name:x.name,url:URL.createObjectURL(x.blob)});});songsLoaded=true;applyMusic();};q.onerror=()=>{songsLoaded=true;musicUI();};})
+  .catch(()=>{songsLoaded=true;musicUI();});
+/* the phone may pause audio while the owner is in the TikTok app: pick it up again */
+document.addEventListener('visibilitychange',()=>{if(document.hidden)return;resumeAC();try{if(songOn&&songEl&&songEl.paused){const r=songEl.play();if(r&&r.catch)r.catch(()=>{});}}catch(_){}});
+document.addEventListener('pointerdown',resumeAC,true);
+/* read-only state for the automatic checks (never shown) */
+Object.defineProperty(window,'__namesAudio',{get:()=>({ctx:AC,state:AC?AC.state:'none',gain:musicBus?musicBus.gain.value:null,target:musicTarget(),sel:musicSel,vol:musicVol,mode:musicMode,ducked,songs:songs.length,songIdx,songOn,el:songEl})});
+musicUI();
 
 /* ---------- lines on the sheet ---------- */
 const meas=document.createElement('div');meas.className='meas ln';
@@ -294,12 +438,12 @@ const IDLE=['ДОБРО ПОЖАЛОВАТЬ','ХОРОШЕГО НАСТРОЕН
 function setTyping(on){kbEl.classList.toggle('on',on);cur.classList.toggle('typing',on);}
 async function typeGift(name){
   num++;const text=num+'. '+name;const fast=()=>giftQ.length>6;
-  cur.classList.remove('grey');cur.dataset.full=text;cur.dataset.h='1';fit(cur);setTyping(true);
+  cur.classList.remove('grey');cur.dataset.full=text;cur.dataset.h='1';fit(cur);setTyping(true);duck(true);
   for(const ch of Array.from(text)){cur._t.textContent+=ch;press(ch);await sleep(fast()?rnd(40,70):rnd(85,180)+(ch===' '?rnd(60,140):0));}
   const hw=heartEl(true);cur._tx.appendChild(hw);floatHearts(hw);
   await sleep(fast()?220:560);
   press('\n');typed++;history.push({kind:'gift',text});
-  enterLine();setTyping(true);lastDone=Date.now();
+  enterLine();setTyping(true);lastDone=Date.now();if(!giftQ.length)duck(false);   /* the next queued name keeps the music low */
   await sleep(fast()?80:240);setTyping(false);
 }
 async function erase(){
@@ -321,9 +465,10 @@ async function typeGrey(text,lo,hi){
   for(;;){
     try{
       if(giftQ.length){await typeGift(giftQ.shift());continue;}
+      duck(false);
       if(greetQ.length){await typeGrey('ПРИВЕТ, '+greetQ.shift()+'!',60,130);continue;}
       if(Date.now()-lastDone>=10000){await typeGrey(IDLE[idleI++%IDLE.length],60,130);continue;}
-    }catch(e){setTyping(false);ttLog('ошибка печати: '+(e&&e.message));}
+    }catch(e){setTyping(false);duck(false);ttLog('ошибка печати: '+(e&&e.message));}
     await sleep(100);
   }
 })();
@@ -418,11 +563,18 @@ async function keepAwake(){if(wakeP)return;try{if(document.hidden||wakeL||!navig
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)keepAwake();});
 document.addEventListener('pointerdown',()=>{keepAwake();},true);
 stage.addEventListener('contextmenu',e=>e.preventDefault());
-stage.addEventListener('click',()=>{if(!isFs())goFs();keepAwake();ensureAudio();$('hint').classList.add('gone');});
-let corner=[];
-stage.addEventListener('pointerdown',e=>{const r=stage.getBoundingClientRect();
-  if(e.clientX-r.left<r.width*.15&&e.clientY-r.top<r.height*.10){const now=Date.now();corner=corner.filter(t=>now-t<1500);corner.push(now);
-    if(corner.length>=3){corner=[];panOpen();}}else corner=[];});
+stage.addEventListener('click',()=>{if(!isFs())goFs();keepAwake();
+  const first=!audioTried;makeAC();if(first)applyMusic();   /* the music starts with the first tap (the same tap that opens fullscreen) */
+  $('hint').classList.add('gone');});
+/* two hidden corners, 3 taps within 1.5 s: top-left = main settings, top-right = small music panel */
+let cornerL=[],cornerR=[];
+const tap3=(arr,now)=>{arr=arr.filter(t=>now-t<1500);arr.push(now);return arr;};
+stage.addEventListener('pointerdown',e=>{const r=stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,now=Date.now();
+  const top=y<r.height*.10,onGear=!!(e.target&&e.target.closest&&e.target.closest('#gear'));
+  if(top&&x<r.width*.15){cornerL=tap3(cornerL,now);if(cornerL.length>=3){cornerL=[];panOpen();}}else cornerL=[];
+  if(onGear)return;   /* taps on the visible ⚙ do not count for the music corner */
+  if(top&&x>r.width*.85){cornerR=tap3(cornerR,now);if(cornerR.length>=3){cornerR=[];$('mini').classList.add('open');musicUI();}}else cornerR=[];});
+$('mx').addEventListener('click',()=>$('mini').classList.remove('open'));
 
 /* ---------- link mode / saved settings: connect by itself (never in test mode) ---------- */
 if(!TEST){try{const u=(Q0.get('u')||'').trim().replace(/^@/,''),k=(Q0.get('k')||'').trim();

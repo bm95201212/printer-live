@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Имена — Принтер LIVE</title>
+<meta name="theme-color" content="#000000">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700;800&family=Roboto:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* «Имена» — a typing screen for TikTok LIVE. Sizes: horizontal in cqw, vertical in cqh (container = #stage). */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#0d0f14;overflow:hidden}
+body{font-family:Roboto,Arial,sans-serif;color:#1d2330}
+#stage{position:relative;width:100%;height:100%;margin:0 auto;overflow:hidden;container-type:size;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;
+  background:radial-gradient(ellipse 70% 30% at 50% 34%,rgba(92,150,255,.33),rgba(92,150,255,0) 70%),linear-gradient(180deg,#eef0f5 0%,#dfe2ea 35%,#c9cdd8 58%)}
+/* wide windows (desktop): a 9:16 stage in the middle with dark side bars; phones always use the whole screen */
+@media (min-aspect-ratio:3/4){#stage{width:calc(100vh*9/16);width:calc(100dvh*9/16)}}
+
+/* ---------- monitor ---------- */
+.mon{position:absolute;top:14.5cqh;height:39cqh;left:4cqw;right:4cqw;border-radius:2.2cqw;padding:1.7cqw 1.7cqw 3.4cqw;
+  background:linear-gradient(180deg,#30333d,#17191f);
+  box-shadow:0 0 6cqw rgba(70,130,255,.30),0 0 1.2cqw rgba(90,150,255,.35),0 1.6cqw 3cqw rgba(10,15,30,.35),inset 0 0 0 .25cqw rgba(255,255,255,.06)}
+.led{position:absolute;bottom:1.25cqw;left:50%;width:.9cqw;height:.9cqw;margin-left:-.45cqw;border-radius:50%;background:#4da3ff;box-shadow:0 0 1.2cqw #4da3ff,0 0 .4cqw #9fd0ff}
+.scr{height:100%;display:flex;flex-direction:column;border-radius:.5cqw;overflow:hidden;background:#dfe3ea}
+.tb{flex:none;height:5.2cqw;background:#2b579a;color:#fff;display:flex;align-items:center;padding:0 1.6cqw;gap:1.3cqw;font:500 2.5cqw Roboto,Arial,sans-serif}
+.tb svg{width:2.8cqw;height:2.8cqw;flex:none}
+.tb .ttl{flex:1;text-align:center;letter-spacing:.02em}
+.tb .win{display:flex;gap:2.4cqw;font-size:2.3cqw;opacity:.95}
+.tool{flex:none;height:6.2cqw;background:#f4f5f8;border-bottom:.2cqw solid #d5d9e1;display:flex;align-items:center;gap:1cqw;padding:0 1.4cqw;font:500 2.2cqw Roboto,Arial,sans-serif;color:#2c3344}
+.tool .box{height:4cqw;border:.2cqw solid #c4cad6;border-radius:.5cqw;background:#fff;display:flex;align-items:center;padding:0 1cqw;gap:1cqw}
+.tool .box i{font-style:normal;font-size:1.6cqw;color:#6a7385}
+.tool .b{width:4cqw;height:4cqw;border-radius:.5cqw;display:flex;align-items:center;justify-content:center;font-size:2.4cqw;color:#2c3344}
+.tool .b.on{background:#cfdcf3;box-shadow:inset 0 0 0 .2cqw #9db6e2}
+.tool .b svg{width:2.6cqw;height:2.6cqw}
+.tool .sep{width:.2cqw;height:3.4cqw;background:#d5d9e1}
+.doc{flex:1;position:relative;min-height:0}
+.sheet{position:absolute;top:1.6cqw;bottom:1.6cqw;left:2.6cqw;right:2.6cqw;background:#fff;overflow:hidden;box-shadow:0 .3cqw 1cqw rgba(30,40,70,.18)}
+.sheet::after{content:"";position:absolute;left:0;right:0;top:0;height:45%;background:linear-gradient(180deg,#fff 12%,rgba(255,255,255,0));pointer-events:none;z-index:2}
+.st{flex:none;height:3.8cqw;background:#2b579a;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 1.6cqw;font:500 2cqw Roboto,Arial,sans-serif}
+
+/* ---------- typed lines ---------- */
+.lines{position:absolute;left:0;right:0;bottom:2.2cqw;display:flex;flex-direction:column}
+.ln{position:relative;flex:none;height:calc(7.8cqw*1.13);display:flex;justify-content:center;align-items:center;white-space:nowrap}
+.tx,.cr{font-size:calc(7.8cqw*var(--k,1)*var(--s,1))}
+.tx{display:inline-flex;align-items:center;font-family:"Roboto Condensed","Arial Narrow",Arial,sans-serif;font-weight:800;line-height:1.13;text-transform:uppercase}
+.t{display:inline-block;padding:0 .03em;color:transparent;
+  background:linear-gradient(180deg,#3f78e6 0%,#1f469f 58%,#132c72 100%);-webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 .05em 0 #a9b9df) drop-shadow(0 .1em .1em rgba(19,44,114,.26))}
+.t:empty{padding:0}
+.ln.grey{--k:.8}
+.ln.grey .t{background:linear-gradient(180deg,#a3adc2,#7a869e);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 .05em .07em rgba(60,70,95,.16))}
+.hw{position:relative;display:inline-block;width:.82em;height:.82em;margin-left:.2em;flex:none}
+.hw>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 .05em .06em rgba(20,60,160,.35))}
+.hw.pop>svg{animation:pop .5s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pop{0%{transform:scale(0)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+.mini{position:absolute;left:30%;top:20%;width:.36em;height:.36em;animation:fly 1.4s ease-out forwards;pointer-events:none}
+.mini svg{display:block;width:100%;height:100%}
+@keyframes fly{0%{transform:translate(0,0) scale(.6);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx),-1.3em) scale(1);opacity:0}}
+.cr{display:inline-block;width:.07em;height:.86em;margin-left:.05em;background:#2b579a;border-radius:.02em;animation:blink 1.05s steps(1) infinite;flex:none}
+.ln.grey .cr{background:#7a869e}
+.ln.typing .cr{animation:none;opacity:1}
+@keyframes blink{0%{opacity:1}50%{opacity:0}}
+.meas{position:absolute;left:0;top:0;display:inline-flex;align-items:center;visibility:hidden;white-space:nowrap;pointer-events:none}
+
+/* ---------- stand, desk, keyboard ---------- */
+.neck{position:absolute;top:53.3cqh;height:3.3cqh;left:44.5cqw;width:11cqw;background:linear-gradient(90deg,#24262d,#4b4f5b 45%,#2a2c33);clip-path:polygon(12% 0,88% 0,100% 100%,0 100%)}
+.foot{position:absolute;top:56.2cqh;height:2.6cqh;left:33cqw;width:34cqw;border-radius:50%/60%;background:radial-gradient(ellipse at 50% 30%,#4a4e59,#1b1d22 70%);box-shadow:0 .8cqh 1.2cqh rgba(0,0,0,.35)}
+.desk{position:absolute;left:0;right:0;top:57.6cqh;bottom:0;
+  background:repeating-linear-gradient(176deg,rgba(255,255,255,.035) 0 .5cqh,rgba(0,0,0,.06) .5cqh 1.3cqh,rgba(255,255,255,.015) 1.3cqh 2.2cqh),
+  linear-gradient(180deg,#5b3b26 0%,#40281a 22%,#2a1a10 70%,#1e130b 100%);box-shadow:inset 0 .35cqh 0 rgba(255,220,180,.10)}
+.foot{z-index:2}
+.mat{position:absolute;top:61.5cqh;left:3cqw;right:3cqw;padding:2.2cqw 2.2cqw 2.6cqw;border-radius:3cqw;background:linear-gradient(180deg,#2c2f37,#1a1b20);box-shadow:0 .6cqw 2cqw rgba(0,0,0,.5),inset 0 0 0 .3cqw rgba(255,255,255,.07)}
+.persp{perspective:120cqw;perspective-origin:50% 0}
+.kb{transform:rotateX(20deg);transform-origin:50% 0;background:linear-gradient(180deg,#f7f8fa,#dde0e6);border-radius:1.8cqw;padding:1.2cqw;display:flex;flex-direction:column;gap:.75cqw;
+  box-shadow:0 .7cqw 0 #b9bdc7,0 1.4cqw 2cqw rgba(0,0,0,.45);transition:box-shadow .3s}
+.kb.on{box-shadow:0 .7cqw 0 #b9bdc7,0 1.4cqw 2cqw rgba(0,0,0,.45),0 0 4.5cqw rgba(70,140,255,.75),0 0 1.2cqw rgba(110,170,255,.8)}
+.row{display:flex;gap:.75cqw}
+.k{position:relative;flex:1 1 0;height:6cqw;border-radius:.9cqw;background:linear-gradient(180deg,#ffffff,#eef0f4);box-shadow:0 .45cqw 0 #c3c7d0,0 .55cqw .6cqw rgba(0,0,0,.18);
+  font:700 2.2cqw Roboto,Arial,sans-serif;color:#2a2f3a;transition:transform .08s,background .12s,box-shadow .08s}
+.k.gap{visibility:hidden}
+.k .la{position:absolute;left:.75cqw;top:.45cqw}
+.k .ru{position:absolute;right:.75cqw;bottom:.55cqw;color:#d3322b;font-size:2cqw}
+.k .c{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.k.mod{background:linear-gradient(180deg,#eef0f4,#dfe2e8);color:#59606f;font-size:2.4cqw;white-space:nowrap}
+.k.en{font-size:1.9cqw}
+.k.lit{transform:translateY(.4cqw);background:linear-gradient(180deg,#6aa8ff,#2f6fe0);color:#fff;box-shadow:0 .05cqw 0 #1f4fae,0 0 2cqw rgba(70,140,255,.9)}
+.k.lit .ru{color:#ffe0e0}
+
+/* ---------- overlays ---------- */
+#gear{position:absolute;z-index:20;top:calc(env(safe-area-inset-top,0px) + 2.5cqw);right:calc(env(safe-area-inset-right,0px) + 2.5cqw);width:10cqw;height:10cqw;min-width:38px;min-height:38px;border-radius:50%;border:0;
+  background:rgba(20,24,34,.55);color:#fff;font-size:5.5cqw;display:flex;align-items:center;justify-content:center;cursor:pointer}
+body.onair #gear{display:none}
+#hint{position:absolute;z-index:15;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 3cqh);transform:translateX(-50%);padding:1.6cqw 4cqw;border-radius:5cqw;background:rgba(15,18,26,.62);color:#e9edf5;font:500 3.6cqw Roboto,Arial,sans-serif;white-space:nowrap;pointer-events:none}
+#hint.gone{display:none}
+#testb{position:absolute;z-index:16;top:calc(env(safe-area-inset-top,0px) + 3cqh);left:4cqw;padding:1cqw 4cqw;border-radius:2cqw;background:#e0242a;color:#fff;font:700 8cqw/1 Roboto,Arial,sans-serif;letter-spacing:.08em;box-shadow:0 .8cqw 2cqw rgba(160,0,0,.4);pointer-events:none}
+#tbtns{position:absolute;z-index:16;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 8.5cqh);display:flex;justify-content:center;gap:2.5cqw}
+#tbtns button{font:700 3.6cqw Roboto,Arial,sans-serif;padding:2cqw 3.6cqw;border-radius:2cqw;border:0;background:#e0242a;color:#fff;cursor:pointer}
+#tbtns button.on{background:#7a0f13}
+
+/* ---------- settings panel (never shown on air unless opened by hand) ---------- */
+#pan{display:none;position:fixed;z-index:50;top:calc(env(safe-area-inset-top,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 10px);
+  width:min(380px,calc(100vw - 20px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));
+  max-height:calc(100% - 20px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:auto;
+  background:rgba(22,25,36,.97);color:#eef1f8;border-radius:14px;padding:14px;font:500 14px Roboto,Arial,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.5);user-select:text;-webkit-user-select:text}
+#pan.open{display:block}
+#pan h4{display:flex;justify-content:space-between;align-items:center;gap:8px;font:700 15px Roboto,Arial,sans-serif;margin-bottom:10px}
+#pan label{display:block;font-size:12px;color:#a9b2c7;margin:8px 0 4px}
+#pan input{width:100%;font:500 15px Roboto,Arial,sans-serif;padding:9px 10px;border-radius:8px;border:1px solid #3a4157;background:#0f121b;color:#fff}
+#pan button{font:700 14px Roboto,Arial,sans-serif;padding:10px 12px;border-radius:8px;border:1px solid #3a4157;background:#262b3c;color:#fff;cursor:pointer}
+#pan .row2{display:flex;gap:8px;margin-top:10px}
+#pan .row2 button{flex:1}
+#pan .go{background:#1f8f4e;border-color:#1f8f4e}
+#pan .stop{background:#8f2a2a;border-color:#8f2a2a}
+#pan .wide{width:100%;margin-top:10px}
+#copy{background:#3a5bff!important;border-color:#3a5bff!important}
+#link{display:none;margin-top:8px;font-size:12px!important}
+#pan .note{font-size:12px;color:#ffb4a8;margin-top:6px}
+#st{margin-top:12px;padding:8px 10px;border-radius:8px;background:#0f121b;font-size:13px;white-space:pre-wrap}
+#log{margin-top:8px;padding:8px 10px;border-radius:8px;background:#0f121b;font:500 11.5px/1.45 ui-monospace,Menlo,Consolas,monospace;color:#b9c3d8;white-space:pre-wrap;word-break:break-word;min-height:40px}
+#pan .help{font-size:12px;color:#8f99ae;margin-top:8px;line-height:1.4}
+
+@media (prefers-reduced-motion:reduce){.mini{display:none}.hw.pop>svg{animation:none}.lines{transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#63b8ff"/><stop offset="1" stop-color="#1a6be0"/></linearGradient>
+</defs></svg>
+
+<div id="stage">
+  <div class="mon"><div class="scr">
+    <div class="tb">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h10l5 5v15H5z" fill="#fff"/><path d="M15 2v5h5" fill="#c9d7ef"/><path d="M8 11h9M8 14h9M8 17h6" stroke="#2b579a" stroke-width="1.6"/></svg>
+      <span class="ttl">Имена.docx</span>
+      <span class="win"><span>—</span><span>▢</span><span>✕</span></span>
+    </div>
+    <div class="tool">
+      <div class="box">Roboto <i>▾</i></div>
+      <div class="box">72 <i>▾</i></div>
+      <div class="sep"></div>
+      <div class="b on" style="font-weight:700">Ж</div>
+      <div class="b" style="font-style:italic">К</div>
+      <div class="b" style="text-decoration:underline">Ч</div>
+      <div class="sep"></div>
+      <div class="b"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16M2 8h10M2 12h16M2 16h10" stroke="#2c3344" stroke-width="1.8"/></svg></div>
+      <div class="b on"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16M5 8h10M2 12h16M5 16h10" stroke="#2c3344" stroke-width="1.8"/></svg></div>
+    </div>
+    <div class="doc"><div class="sheet" id="sheet"><div class="lines" id="lines"></div></div></div>
+    <div class="st"><span>Страница 1 из 1</span><span>100%</span></div>
+  </div><div class="led"></div></div>
+  <div class="desk"></div>
+  <div class="neck"></div><div class="foot"></div>
+  <div class="mat"><div class="persp"><div class="kb" id="kb"></div></div></div>
+  <button id="gear" aria-label="Настройки">⚙</button>
+  <div id="hint">Нажмите на экран</div>
+</div>
+
+<div id="pan" role="dialog" aria-label="Настройки">
+  <h4><span>⚙ Подключение к TikTok LIVE</span><button id="px">✕ Закрыть</button></h4>
+  <label for="tuser">Ваш TikTok (без @)</label><input id="tuser" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="например: my_account">
+  <label for="tkey">Euler Stream API key</label><input id="tkey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="вставьте ключ">
+  <div class="row2"><button class="go" id="go">▶ Подключить</button><button class="stop" id="stop">■ Отключить</button></div>
+  <button id="copy" class="wide">📋 Скопировать ссылку</button>
+  <input id="link" readonly>
+  <div class="note">Ссылка содержит ключ — не показывайте её в эфире</div>
+  <button id="snd" class="wide">🔇 Звук клавиатуры</button>
+  <div id="st">Не подключено</div>
+  <div id="log"></div>
+  <div class="help">Кнопка ⚙ скрывается, когда соединение открыто. Чтобы снова открыть это окно, нажмите 3 раза подряд в левый верхний угол экрана. Ключ хранится только в этом браузере.</div>
+</div>
+
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const stage=$('stage'),sheet=$('sheet'),linesEl=$('lines'),kbEl=$('kb'),pan=$('pan');
+const Q0=new URLSearchParams(location.search);
+const TEST=Q0.get('test')==='1';
+const reduced=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(_){return false;}})();
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const SVGNS='http://www.w3.org/2000/svg';
+
+/* ---------- name cleaning: letters, digits, space, _ . - only; uppercase; max 16 characters ---------- */
+function cleanName(raw){
+  let s=String(raw==null?'':raw);
+  try{s=s.normalize('NFKC');}catch(_){}
+  s=s.replace(/[︀-️⃣‍]/g,'').replace(/[\u{E0100}-\u{E01EF}]/gu,'');   /* emoji joiners / variation selectors */
+  s=s.replace(/[^\p{L}\p{M}\p{Nd} _.\-]/gu,' ').replace(/\s+/g,' ').trim().toUpperCase();
+  if(!/[\p{L}\p{Nd}]/u.test(s))return 'ГОСТЬ';
+  const a=Array.from(s);
+  if(a.length>16)s=a.slice(0,15).join('').trim()+'…';
+  return s;
+}
+
+/* ---------- keyboard ---------- */
+const keyMap={},letterKeys=[];let spaceKey,enterKey,bsKey;
+(function buildKb(){
+  const R=[
+    [...'1234567890-'].map(c=>({c})).concat([{m:'⌫',id:'bs',f:1.5}]),
+    [{gap:.5}].concat([['Q','Й'],['W','Ц'],['E','У'],['R','К'],['T','Е'],['Y','Н'],['U','Г'],['I','Ш'],['O','Щ'],['P','З'],['[','Х'],[']','Ъ']].map(([l,r])=>({l,r}))),
+    [{gap:.25}].concat([['A','Ф'],['S','Ы'],['D','В'],['F','А'],['G','П'],['H','Р'],['J','О'],['K','Л'],['L','Д'],[';','Ж'],["'",'Э']].map(([l,r])=>({l,r})),[{m:'↵ Enter',id:'en',f:1.25}]),
+    [{m:'⇧',f:1.25}].concat([['Z','Я'],['X','Ч'],['C','С'],['V','М'],['B','И'],['N','Т'],['M','Ь'],[',','Б'],['.','Ю']].map(([l,r])=>({l,r})),[{m:'⇧',f:2.25}]),
+    [{gap:3}].concat([{m:'',id:'sp',f:6.5}],[{gap:3}])
+  ];
+  for(const row of R){const rw=document.createElement('div');rw.className='row';
+    for(const k of row){const e=document.createElement('div');e.className='k';
+      if(k.gap){e.className='k gap';e.style.flexGrow=k.gap;rw.appendChild(e);continue;}
+      if(k.f)e.style.flexGrow=k.f;
+      if(k.c){const s=document.createElement('span');s.className='c';s.textContent=k.c;e.appendChild(s);keyMap[k.c]=e;}
+      else if(k.m!==undefined){e.classList.add('mod');const s=document.createElement('span');s.className='c';s.textContent=k.m;e.appendChild(s);
+        if(k.id==='bs')bsKey=e;if(k.id==='en'){enterKey=e;e.classList.add('en');}if(k.id==='sp')spaceKey=e;}
+      else{const a=document.createElement('span');a.className='la';a.textContent=k.l;const b=document.createElement('span');b.className='ru';b.textContent=k.r;e.append(a,b);
+        keyMap[k.l]=e;keyMap[k.r]=e;if(/[A-Z]/.test(k.l))letterKeys.push(e);}
+      rw.appendChild(e);}
+    kbEl.appendChild(rw);}
+  keyMap['Ё']=keyMap['Е'];keyMap['_']=keyMap['-'];keyMap['…']=keyMap['.'];
+})();
+/* letters without their own key light the nearest one */
+const NEAR={'Ә':'А','Ғ':'Г','Қ':'К','Ң':'Н','Ө':'О','Ұ':'У','Ү':'У','Һ':'Х','І':'И','Ї':'И','Є':'Э','Ў':'У','Ґ':'Г','Ј':'J','Ђ':'Д','Ћ':'Ч','Љ':'Л','Њ':'Н','Џ':'Ц','Ѕ':'С'};
+function keyFor(ch){
+  if(ch===' ')return spaceKey;if(ch==='\n')return enterKey;if(ch==='\b')return bsKey;
+  if(keyMap[ch])return keyMap[ch];
+  if(NEAR[ch]&&keyMap[NEAR[ch]])return keyMap[NEAR[ch]];
+  let b='';try{b=ch.normalize('NFD')[0];}catch(_){}
+  if(b&&keyMap[b])return keyMap[b];
+  if(/\p{L}/u.test(ch))return letterKeys[ch.codePointAt(0)%letterKeys.length];
+  if(/\p{Nd}/u.test(ch))return keyMap[String(ch.codePointAt(0)%10)];
+  return null;
+}
+function press(ch){const k=keyFor(ch);if(k){k.classList.add('lit');clearTimeout(k._t);k._t=setTimeout(()=>k.classList.remove('lit'),130);}
+  click(ch==='\n'?'enter':ch===' '?'space':'key');}
+
+/* ---------- keyboard sound (Web Audio, off by default) ---------- */
+let actx=null,noise=null,sndOn=false;
+try{sndOn=localStorage.getItem('namesSound')==='1';}catch(_){}
+function ensureAudio(){if(!sndOn)return;try{if(!actx){const C=window.AudioContext||window.webkitAudioContext;if(C)actx=new C();}
+  if(actx&&actx.state==='suspended')actx.resume();}catch(_){}}
+function click(kind){
+  if(!sndOn||!actx||actx.state!=='running')return;
+  try{if(!noise){noise=actx.createBuffer(1,Math.floor(actx.sampleRate*.12),actx.sampleRate);const d=noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);}
+    const t=actx.currentTime,s=actx.createBufferSource(),f=actx.createBiquadFilter(),g=actx.createGain();
+    s.buffer=noise;f.type='bandpass';f.frequency.value=kind==='enter'?1100:kind==='space'?1700:rnd(2500,3200);f.Q.value=1.3;
+    const peak=kind==='enter'?.55:.35,len=kind==='enter'?.09:.05;
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+len);
+    s.connect(f);f.connect(g);g.connect(actx.destination);s.start(t);s.stop(t+.12);}catch(_){}
+}
+function sndUI(){$('snd').textContent=(sndOn?'🔊':'🔇')+' Звук клавиатуры: '+(sndOn?'вкл':'выкл');}
+$('snd').addEventListener('click',()=>{sndOn=!sndOn;try{localStorage.setItem('namesSound',sndOn?'1':'0');}catch(_){}ensureAudio();sndUI();});
+sndUI();
+
+/* ---------- lines on the sheet ---------- */
+const meas=document.createElement('div');meas.className='meas ln';
+const measTx=document.createElement('span');measTx.className='tx';const measT=document.createElement('span');measT.className='t';
+const measCr=document.createElement('span');measCr.className='cr';measTx.appendChild(measT);meas.append(measTx,measCr);sheet.appendChild(meas);
+function heartSvg(){const s=document.createElementNS(SVGNS,'svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('aria-hidden','true');
+  const p=document.createElementNS(SVGNS,'path');p.setAttribute('d','M12 21.2s-7.6-4.7-10.1-9.4C.2 8.3 2.1 3.8 6.3 3.8c2.4 0 4 1.4 5.7 3.5 1.7-2.1 3.3-3.5 5.7-3.5 4.2 0 6.1 4.5 4.4 8C19.6 16.5 12 21.2 12 21.2z');p.setAttribute('fill','url(#hg)');
+  const h=document.createElementNS(SVGNS,'ellipse');h.setAttribute('cx','7.4');h.setAttribute('cy','8.4');h.setAttribute('rx','2.3');h.setAttribute('ry','1.3');h.setAttribute('transform','rotate(-35 7.4 8.4)');h.setAttribute('fill','#fff');h.setAttribute('opacity','.75');
+  s.append(p,h);return s;}
+function heartEl(anim){const w=document.createElement('span');w.className='hw'+(anim&&!reduced?' pop':'');w.appendChild(heartSvg());return w;}
+function newLineEl(){const ln=document.createElement('div');ln.className='ln';const tx=document.createElement('span');tx.className='tx';const t=document.createElement('span');t.className='t';
+  tx.appendChild(t);ln.appendChild(tx);ln._t=t;ln._tx=tx;return ln;}
+const caret=document.createElement('span');caret.className='cr';
+let cur=newLineEl();cur.appendChild(caret);linesEl.appendChild(cur);
+/* shrink a line so number + name + heart always fit in 92% of the sheet width */
+function fit(ln){const text=ln.dataset.full||'',heart=ln.dataset.h==='1';
+  meas.classList.toggle('grey',ln.classList.contains('grey'));meas.style.setProperty('--s','1');measT.textContent=text;
+  const old=measTx.querySelector('.hw');if(old)old.remove();if(heart)measTx.appendChild(heartEl(false));
+  const w=meas.getBoundingClientRect().width,avail=sheet.clientWidth*.92;
+  const s=w>0&&w>avail?Math.max(.2,avail/w*.995):1;ln.style.setProperty('--s',s.toFixed(4));}
+function refitAll(){for(const ln of linesEl.children)if(ln.dataset.full)fit(ln);}
+try{document.fonts&&document.fonts.addEventListener&&document.fonts.addEventListener('loadingdone',refitAll);}catch(_){}
+addEventListener('resize',refitAll);
+const MAXLINES=7;
+function enterLine(){
+  const ln=newLineEl();caret.remove();ln.appendChild(caret);cur.classList.remove('typing');
+  linesEl.appendChild(ln);cur=ln;
+  if(!reduced){const h=ln.offsetHeight;linesEl.style.transition='none';linesEl.style.transform='translateY('+h+'px)';void linesEl.offsetHeight;
+    linesEl.style.transition='transform .38s cubic-bezier(.2,.7,.25,1)';linesEl.style.transform='translateY(0)';}
+  setTimeout(()=>{while(linesEl.children.length>MAXLINES+1)linesEl.firstElementChild.remove();},reduced?0:420);
+}
+function floatHearts(hw){if(reduced)return;for(let i=0;i<3;i++){const m=document.createElement('span');m.className='mini';m.style.setProperty('--dx',((i-1)*.45)+'em');m.style.animationDelay=(i*.18)+'s';
+  m.appendChild(heartSvg());hw.appendChild(m);setTimeout(()=>m.remove(),1400+i*180+100);}}
+
+/* ---------- typing queue: gifts first, then greetings, then idle phrases ---------- */
+const giftQ=[],greetQ=[];let num=0,typed=0,lastDone=Date.now(),idleI=0;const history=[];
+Object.defineProperty(window,'__namesTyped',{get:()=>typed});
+Object.defineProperty(window,'__namesLog',{get:()=>history.slice()});
+function enqueueGift(name){giftQ.push(name);}
+function enqueueGreet(name){if(greetQ.length>=2)return false;greetQ.push(name);return true;}
+const IDLE=['ДОБРО ПОЖАЛОВАТЬ','ХОРОШЕГО НАСТРОЕНИЯ','СПАСИБО, ЧТО ВЫ ЗДЕСЬ','РАДЫ ВСЕМ ГОСТЯМ'];
+function setTyping(on){kbEl.classList.toggle('on',on);cur.classList.toggle('typing',on);}
+async function typeGift(name){
+  num++;const text=num+'. '+name;const fast=()=>giftQ.length>6;
+  cur.classList.remove('grey');cur.dataset.full=text;cur.dataset.h='1';fit(cur);setTyping(true);
+  for(const ch of Array.from(text)){cur._t.textContent+=ch;press(ch);await sleep(fast()?rnd(40,70):rnd(85,180)+(ch===' '?rnd(60,140):0));}
+  const hw=heartEl(true);cur._tx.appendChild(hw);floatHearts(hw);
+  await sleep(fast()?220:560);
+  press('\n');typed++;history.push({kind:'gift',text});
+  enterLine();setTyping(true);lastDone=Date.now();
+  await sleep(fast()?80:240);setTyping(false);
+}
+async function erase(){
+  setTyping(true);let a=Array.from(cur._t.textContent);
+  while(a.length){a.pop();cur._t.textContent=a.join('');press('\b');await sleep(giftQ.length?rnd(16,26):rnd(45,75));}
+  setTyping(false);
+}
+async function typeGrey(text,lo,hi){
+  cur.classList.add('grey');cur.dataset.full=text;cur.dataset.h='0';fit(cur);setTyping(true);
+  let cut=false;
+  for(const ch of Array.from(text)){if(giftQ.length){cut=true;break;}cur._t.textContent+=ch;press(ch);await sleep(rnd(lo,hi));}
+  if(!cut){history.push({kind:'grey',text});setTyping(false);const end=Date.now()+1800;while(Date.now()<end&&!giftQ.length)await sleep(50);}
+  await erase();
+  cur.classList.remove('grey');delete cur.dataset.full;cur.style.removeProperty('--s');lastDone=Date.now();
+}
+(async function loop(){
+  try{if(document.fonts&&document.fonts.load)await Promise.race([Promise.all([document.fonts.load('800 40px "Roboto Condensed"','AZ АЯ ӘҒҚҢӨҰҮҺІ 0123'),document.fonts.load('700 20px Roboto','Ж')]),sleep(1500)]);}catch(_){}
+  refitAll();
+  for(;;){
+    try{
+      if(giftQ.length){await typeGift(giftQ.shift());continue;}
+      if(greetQ.length){await typeGrey('ПРИВЕТ, '+greetQ.shift()+'!',60,130);continue;}
+      if(Date.now()-lastDone>=10000){await typeGrey(IDLE[idleI++%IDLE.length],60,130);continue;}
+    }catch(e){setTyping(false);ttLog('ошибка печати: '+(e&&e.message));}
+    await sleep(100);
+  }
+})();
+
+/* ---------- TikTok LIVE connection (Euler Stream WebSocket, JSON events) — same logic as the printer ---------- */
+let ttWs=null,ttWant=false,ttTry=0,ttTO=null;const ttLines=[],ttStreak={},ttTypes={},ttStats={gift:0,member:0,like:0,chat:0,follow:0};
+function ttGet(k){try{return localStorage.getItem(k)||'';}catch(_){return '';}}
+function ttSet(k,v){try{localStorage.setItem(k,v);}catch(_){}}
+function ttStatus(t){$('st').textContent=t;}
+function onAir(on){document.body.classList.toggle('onair',!!on);}
+function ttLog(t){if(t)ttLines.unshift(new Date().toLocaleTimeString().slice(0,8)+'  '+t);if(ttLines.length>10)ttLines.pop();
+  const types=Object.keys(ttTypes).map(k=>k+' ×'+ttTypes[k]).join(', ')||'пока нет';
+  $('log').textContent=ttLines.join('\n')+'\n\nПодарки: '+ttStats.gift+' · Зрители: '+ttStats.member+' · Лайки: '+ttStats.like+' · Чат: '+ttStats.chat+' · Подписки: '+ttStats.follow+'\nТипы событий: '+types;}
+function ttConnect(){
+  clearTimeout(ttTO);if(ttWs){try{ttWs.onclose=null;ttWs.close(1000);}catch(_){}ttWs=null;}
+  const u=ttGet('ttUser'),k=ttGet('ttKey');if(!u||!k)return;
+  ttStatus('Подключение к @'+u+' …');
+  let ws;try{ws=new WebSocket('wss://ws.eulerstream.com?uniqueId='+encodeURIComponent(u)+'&apiKey='+encodeURIComponent(k));}
+  catch(e){ttStatus('Ошибка: браузер не разрешил подключение');ttLog(String(e));return;}
+  ttWs=ws;
+  ws.onopen=()=>{ttTry=0;onAir(true);ttStatus('✅ Подключено к @'+u+' — ждём события');ttLog('соединение открыто');};
+  ws.onmessage=ev=>{
+    if(typeof ev.data!=='string'){ttLog('пришли двоичные данные — формат не JSON');return;}
+    let d;try{d=JSON.parse(ev.data);}catch(_){ttLog('не удалось прочитать сообщение');return;}
+    const list=Array.isArray(d&&d.messages)?d.messages:(d&&d.type?[d]:[]);
+    list.forEach(m=>{try{ttHandle(m);}catch(e){ttLog('ошибка в событии '+(m&&m.type)+': '+e.message);}});};
+  ws.onerror=()=>ttLog('ошибка соединения');
+  ws.onclose=e=>{ttWs=null;const c=e.code;
+    const why={4401:'неверный ключ',4403:'нет доступа',4404:'эфир не начат',4429:'слишком много подключений',4005:'эфир закончился',4400:'неверные данные',4006:'нет сообщений',4500:'TikTok закрыл соединение',4555:'время соединения истекло'}[c]||('код '+c);
+    ttLog('соединение закрыто: '+why);
+    if(!ttWant){ttStatus('Отключено');onAir(false);return;}
+    if(c===4401||c===4403||c===4400){ttWant=false;onAir(false);ttStatus('❌ '+why+' — проверьте TikTok и ключ');return;}
+    if(c===4005){ttWant=false;onAir(false);ttStatus('Эфир закончился');return;}
+    ttTry++;if(c!==4404&&ttTry>40){ttWant=false;onAir(false);ttStatus('❌ Не удалось подключиться ('+why+')');return;}
+    const wait=c===4404?Math.min(60000,20000+ttTry*2000):6000;   /* each try costs one Euler request (free plan: 500/hour) */
+    ttStatus((c===4404?'⏳ Эфир ещё не начат — ':'🔄 Переподключение — ')+'попытка '+ttTry+' через '+(wait/1000)+' с');
+    ttTO=setTimeout(()=>{if(ttWant)ttConnect();},wait);};
+}
+/* user: the streak id is the printer's; the shown name is nickname / displayId / uniqueId (never secUid), cleaned */
+function ttUser(u){u=u||{};
+  const pname=String(u.nickname||u.displayId||u.uniqueId||u.secUid||'Зритель').trim().slice(0,24)||'Зритель';
+  const raw=[u.nickname,u.displayId,u.uniqueId].map(x=>x==null?'':String(x).trim()).find(x=>x)||'';
+  return {name:raw?cleanName(raw):'ГОСТЬ',id:String(u.userId||u.id||u.idStr||pname)};}
+function ttHandle(m){
+  const t=m&&m.type,d=(m&&m.data)||{};
+  ttTypes[t]=(ttTypes[t]||0)+1;
+  if(t==='WebcastGiftMessage'){
+    const v=ttUser(d.user),key=v.id+'|'+(d.giftId||'')+'|'+(d.groupId||d.comboId||'');
+    /* a combo streak sends several updates, each with the running total: count only the new part; an old record (>8 s) is a new send */
+    const now=Date.now(),rec=ttStreak[key],prev=rec&&now-rec.t<8000?rec.n:0,cnt=Math.max(1,+(d.repeatCount||d.comboCount||1)),add=Math.min(20,cnt-prev);
+    if(d.repeatEnd===1||d.repeatEnd===true)delete ttStreak[key];else ttStreak[key]={n:Math.max(prev,cnt),t:now};
+    if(!(add>0)){ttLog();return;}ttStats.gift+=add;ttLog('🎁 '+v.name+' ×'+add);
+    for(let i=0;i<add;i++)enqueueGift(v.name);}
+  else if(t==='WebcastMemberMessage'){const v=ttUser(d.user);ttStats.member++;const ok=enqueueGreet(v.name);ttLog('👋 зритель: '+v.name+(ok?'':' (пропущен, очередь полна)'));}
+  else if(t==='WebcastLikeMessage'){ttStats.like+=Math.max(1,+(d.count||d.likeCount||1));ttLog();}
+  else if(t==='WebcastChatMessage'){ttStats.chat++;ttLog();}
+  else if(t==='WebcastSocialMessage'){const k=JSON.stringify((d.common&&d.common.displayText)||'')+' '+(d.action||'');
+    if(/follow/i.test(k)||d.action===1||d.action==='1'){ttStats.follow++;}ttLog();}
+  else if(t==='roomInfo'){ttLog('эфир найден');}
+  else if(t==='tiktok.connect'){ttStatus('✅ Подключено к эфиру @'+ttGet('ttUser'));ttLog('подключено к TikTok');}
+  else if(t==='tiktok.disconnect'){ttLog('TikTok отключился');}
+  else if(t==='room.status'){ttLog('статус: '+((d&&d.state)||''));}
+  else ttLog();
+}
+
+/* ---------- settings panel ---------- */
+function panOpen(){$('tuser').value=ttGet('ttUser');$('tkey').value=ttGet('ttKey');pan.classList.add('open');}
+$('gear').addEventListener('click',panOpen);
+$('px').addEventListener('click',()=>pan.classList.remove('open'));
+const readForm=()=>({u:$('tuser').value.trim().replace(/^@/,''),k:$('tkey').value.trim()});
+$('copy').addEventListener('click',()=>{const {u,k}=readForm();
+  if(!u||!k){ttStatus('Сначала введите TikTok и ключ');return;}ttSet('ttUser',u);ttSet('ttKey',k);
+  const link='https://bm95201212.github.io/printer-live/names.html?u='+encodeURIComponent(u)+'&k='+encodeURIComponent(k),f=$('link');
+  f.value=link;f.style.display='block';f.select();
+  const ok=()=>ttStatus('✅ Ссылка скопирована'),bad=()=>{try{if(document.execCommand('copy'))ok();else throw 0;}catch(_){ttStatus('Выделите ссылку ниже и скопируйте её');}};
+  try{navigator.clipboard.writeText(link).then(ok,bad);}catch(_){bad();}});
+$('go').addEventListener('click',()=>{
+  if(TEST){ttStatus('Тестовый режим: TikTok не подключается');return;}
+  const {u,k}=readForm();if(!u||!k){ttStatus('Введите TikTok и ключ');return;}ttSet('ttUser',u);ttSet('ttKey',k);ttWant=true;ttTry=0;ttConnect();});
+$('stop').addEventListener('click',()=>{ttWant=false;clearTimeout(ttTO);if(ttWs){try{ttWs.close(1000);}catch(_){}}ttWs=null;onAir(false);ttStatus('Отключено');ttLog('отключено вручную');});
+ttLog();
+if(TEST)ttStatus('Тестовый режим: TikTok не подключается');
+else if(ttGet('ttUser'))ttStatus('Не подключено (@'+ttGet('ttUser')+')');
+
+/* ---------- phone: fullscreen on tap, screen kept on, hidden corner to reopen the panel ---------- */
+function isFs(){return !!(document.fullscreenElement||document.webkitFullscreenElement);}
+function goFs(){const el=document.documentElement;
+  try{if(isFs())return;const r=el.requestFullscreen?el.requestFullscreen():(el.webkitRequestFullscreen?el.webkitRequestFullscreen():null);if(r&&r.catch)r.catch(()=>{});}catch(_){}}
+let wakeL=null,wakeP=false;
+async function keepAwake(){if(wakeP)return;try{if(document.hidden||wakeL||!navigator.wakeLock)return;wakeP=true;const w=await navigator.wakeLock.request('screen');wakeL=w;
+  w.addEventListener('release',()=>{if(wakeL===w)wakeL=null;});}catch(_){wakeL=null;}finally{wakeP=false;}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)keepAwake();});
+document.addEventListener('pointerdown',()=>{keepAwake();},true);
+stage.addEventListener('contextmenu',e=>e.preventDefault());
+stage.addEventListener('click',()=>{if(!isFs())goFs();keepAwake();ensureAudio();$('hint').classList.add('gone');});
+let corner=[];
+stage.addEventListener('pointerdown',e=>{const r=stage.getBoundingClientRect();
+  if(e.clientX-r.left<r.width*.15&&e.clientY-r.top<r.height*.10){const now=Date.now();corner=corner.filter(t=>now-t<1500);corner.push(now);
+    if(corner.length>=3){corner=[];panOpen();}}else corner=[];});
+
+/* ---------- link mode / saved settings: connect by itself (never in test mode) ---------- */
+if(!TEST){try{const u=(Q0.get('u')||'').trim().replace(/^@/,''),k=(Q0.get('k')||'').trim();
+  if(u&&k){ttSet('ttUser',u);ttSet('ttKey',k);}
+  if(ttGet('ttUser')&&ttGet('ttKey')){ttWant=true;ttTry=0;setTimeout(ttConnect,800);}}catch(_){}}
+
+/* ---------- test mode (?test=1 only): sample names, never connects ---------- */
+if(TEST){
+  const b=document.createElement('div');b.id='testb';b.textContent='ТЕСТ';stage.appendChild(b);
+  const box=document.createElement('div');box.id='tbtns';stage.appendChild(box);
+  const SAMPLE=['Азамат','Әсем','Қуаныш','Нұрсұлтан','Гүлназ','Айгерім','Өмірзақ','Ұлжан','Іңкәр','Dana_77','Ержан','Мадина','Ruslan.k','Жанар','Һамит','Arman-kz','Сәуле','Ғалым'];
+  const pick=()=>SAMPLE[Math.floor(Math.random()*SAMPLE.length)];let tid=1;
+  const gift=()=>{const n=pick();ttHandle({type:'WebcastGiftMessage',data:{user:{userId:'t'+(tid++),nickname:n},giftId:5655,repeatCount:1,repeatEnd:1}});};
+  const join=()=>{ttHandle({type:'WebcastMemberMessage',data:{user:{userId:'t'+(tid++),nickname:pick()}}});};
+  const mk=(t,f)=>{const e=document.createElement('button');e.textContent=t;e.addEventListener('click',f);box.appendChild(e);return e;};
+  let demo=null;const demoB=mk('Демо',()=>{if(demo){clearTimeout(demo);demo=null;demoB.classList.remove('on');demoB.textContent='Демо';return;}
+    demoB.classList.add('on');demoB.textContent='■ Демо';const step=()=>{Math.random()<.75?gift():join();demo=setTimeout(step,rnd(700,3500));};step();});
+  mk('+ Подарок',gift);mk('+ Зритель',join);
+}
+})();
+</script>
+</body>
+</html>

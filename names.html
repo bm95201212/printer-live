@@ -425,7 +425,7 @@ musicUI();
 const meas=document.createElement('div');meas.className='meas ln';
 const measTx=document.createElement('span');measTx.className='tx';const measT=document.createElement('span');measT.className='t';
 const measCr=document.createElement('span');measCr.className='cr';measTx.appendChild(measT);meas.append(measTx,measCr);sheet.appendChild(meas);
-const HFILL={blue:'url(#hg)',red:'url(#hr)',gold:'url(#hgo)'};   /* blue = gift, red = new follower, gold = expensive gift */
+const HFILL={blue:'url(#hg)',red:'url(#hr)',gold:'url(#hgo)'};   /* red = gift, blue = new follower, gold = expensive gift */
 function heartSvg(kind){const s=document.createElementNS(SVGNS,'svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('aria-hidden','true');
   const p=document.createElementNS(SVGNS,'path');p.setAttribute('d','M12 21.2s-7.6-4.7-10.1-9.4C.2 8.3 2.1 3.8 6.3 3.8c2.4 0 4 1.4 5.7 3.5 1.7-2.1 3.3-3.5 5.7-3.5 4.2 0 6.1 4.5 4.4 8C19.6 16.5 12 21.2 12 21.2z');p.setAttribute('fill',HFILL[kind]||HFILL.blue);
   const h=document.createElementNS(SVGNS,'ellipse');h.setAttribute('cx','7.4');h.setAttribute('cy','8.4');h.setAttribute('rx','2.3');h.setAttribute('ry','1.3');h.setAttribute('transform','rotate(-35 7.4 8.4)');h.setAttribute('fill','#fff');h.setAttribute('opacity','.75');
@@ -508,10 +508,10 @@ function finUI(){
 function setFinal(on){finOn=!!on;finSince=Date.now();finDone=false;finFirst=finOn;finI=0;finUI();}
 document.querySelectorAll('.finbtn').forEach(b=>b.addEventListener('click',()=>setFinal(!finOn)));
 
-/* one numbered line: a gift (blue heart; gold line and gold heart for expensive ones) or a new follower (red heart) */
+/* one numbered line: a gift (red heart; gold line and gold heart for expensive ones) or a new follower (blue heart) */
 async function typeNumbered(it){
   busyNum=true;finUI();
-  num++;const text=num+'. '+it.name,mega=it.tier==='mega',hi=mega||it.tier==='gold',hk=it.kind==='follow'?'red':hi?'gold':'blue';
+  num++;const text=num+'. '+it.name,mega=it.tier==='mega',hi=mega||it.tier==='gold',hk=it.kind==='follow'?'blue':hi?'gold':'red';
   const fast=()=>!hi&&waiting()>6;   /* a long queue is typed faster, but never a gold line */
   cur.classList.remove('grey');cur.classList.toggle('gold',hi);cur.dataset.full=text;cur.dataset.h='1';fit(cur);setTyping(true);duck(true);
   for(const ch of Array.from(text)){cur._t.textContent+=ch;press(ch);await sleep(mega?rnd(170,260):fast()?rnd(40,70):rnd(85,180)+(ch===' '?rnd(60,140):0));}

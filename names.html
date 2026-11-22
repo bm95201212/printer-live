@@ -60,6 +60,19 @@ body{font-family:Roboto,Arial,sans-serif;color:#1d2330}
   background:linear-gradient(180deg,#3f78e6 0%,#1f469f 58%,#132c72 100%);-webkit-background-clip:text;background-clip:text;
   filter:drop-shadow(0 .05em 0 #a9b9df) drop-shadow(0 .1em .1em rgba(19,44,114,.26))}
 .t:empty{padding:0}
+/* sender's profile picture before the number (real page: TikTok photo; fallback: coloured circle with the first letter) */
+.av{flex:none;width:.92em;height:.92em;margin:0 .2em 0 .2em;border-radius:50%;overflow:hidden;position:relative;display:inline-flex;align-items:center;justify-content:center;
+  font-family:Roboto,Arial,sans-serif;font-weight:700;color:#fff;box-shadow:0 0 0 .06em #fff,0 0 0 .11em #a9b9df,0 .08em .14em rgba(19,44,114,.3)}
+.av .ini{font-size:.5em;line-height:1}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ln.gold .av{box-shadow:0 0 0 .06em #fff,0 0 0 .12em #e7b545,0 0 .3em rgba(255,200,80,.6)}
+.av.pop{animation:avpop .35s cubic-bezier(.3,1.6,.5,1)}
+@keyframes avpop{from{transform:scale(0)}to{transform:scale(1)}}
+.meas .av{animation:none}
+.ln.fol{--k:.8}
+/* live clock in the status bar, like the Windows taskbar */
+.st .clk{display:flex;gap:1.4cqw;align-items:center;font-variant-numeric:tabular-nums}
+.st .clk b{font-weight:700}
 .ln.grey{--k:.8}
 .ln.grey .t{background:linear-gradient(180deg,#a3adc2,#7a869e);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 .05em .07em rgba(60,70,95,.16))}
 .ln.gold{--k:1.09;height:calc(7.8cqw*1.13*1.14);transition:height .2s ease}
@@ -160,10 +173,45 @@ button.mnext:disabled{opacity:.45}
 #mini .mrow{display:flex;gap:8px;margin-top:10px}
 #mini .mrow .mnext,#mini .mrow .finbtn{flex:1}
 button.finbtn.on{background:#e8590c!important;border-color:#ffb37a!important}
+/* screen language (RU/EN) buttons */
+#pan .lchoice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+#mini .lchoice button{flex:1}
+.lchoice button.on{background:#3a5bff!important;border-color:#7d9bff!important}
 #mini .mmsg{margin-top:8px;font-size:15px;color:#ffd28a;text-align:center}
 #mini .mmsg:empty{display:none}
 
 @media (prefers-reduced-motion:reduce){.mini,.spark{display:none}.hw.pop>svg{animation:none}.lines{transition:none!important}.ln.gold{transition:none}.mon.goldglow{animation:none}.st{transition:none}#fx{display:none}}
+
+/* ===== photo scene (Nano Banana): wall + desk, monitor and keyboard as cut-out photos ===== */
+#stage{background:#120b07 url(img/names_bg.jpg) center top/100% auto no-repeat}
+.desk,.neck,.foot,.led{display:none}
+/* the desk line in bg.jpg is at 69.5% of its height = 124.5cqw from the top (the photo is scaled to the stage width) */
+.mon{top:37cqw;left:.25cqw;right:auto;width:99.5cqw;height:101cqw;padding:0;border-radius:0;background:none;box-shadow:none}
+.mon::after{content:"";position:absolute;inset:0;background:url(img/names_monitor.png) center/100% 100% no-repeat;pointer-events:none;z-index:3;filter:drop-shadow(0 1.2cqw 1.2cqw rgba(0,0,0,.45))}
+.mon::before{content:"";position:absolute;left:24%;right:24%;top:94.2%;height:5.2%;background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(0,0,0,.55),rgba(0,0,0,0) 72%);pointer-events:none;z-index:2}
+.mon .scr{position:absolute;left:3.15%;top:2.55%;width:93.7%;height:72.05%;border-radius:0;z-index:1}
+.mon.goldglow{animation:none}
+.mon.goldglow .scr{animation:sglow 2s ease-in-out}
+.ln.mid .hw{width:1.04em;height:1.04em}
+.bh{position:absolute;left:25%;top:25%;width:.42em;height:.42em;pointer-events:none;animation:bh 1.1s ease-out forwards}
+.bh svg{width:100%;height:100%;display:block}
+@keyframes bh{0%{transform:translate(0,0) scale(.3);opacity:0}15%{opacity:1}100%{transform:translate(var(--bx),var(--by)) scale(1);opacity:0}}
+.mon.pinkglow .scr{animation:pglow 1.2s ease-in-out}
+@keyframes pglow{0%,100%{box-shadow:none}40%{box-shadow:0 0 5cqw 1.4cqw rgba(255,110,150,.55)}}
+@keyframes sglow{0%,100%{box-shadow:none}45%{box-shadow:0 0 7cqw 2.5cqw rgba(255,188,60,.75)}}
+/* soft screen light on the desk */
+.mat::before{content:"";position:absolute;left:-10cqw;right:-10cqw;top:-9cqw;height:30cqw;background:radial-gradient(ellipse 50% 50% at 50% 30%,rgba(120,170,255,.22),rgba(120,170,255,0) 70%);pointer-events:none}
+.mat{top:141.6cqw;left:7cqw;right:7cqw;padding:0;border-radius:0;background:none;box-shadow:none}
+.persp{perspective:150cqw;perspective-origin:50% 0}
+.kb{position:relative;display:block;width:86cqw;height:32.1cqw;padding:0;border-radius:0;background:url(img/names_keyboard.png) center/100% 100% no-repeat;box-shadow:none;
+  transform:rotateX(40deg);transform-origin:50% 0;filter:drop-shadow(0 1.6cqw 1.4cqw rgba(0,0,0,.6));transition:filter .3s}
+.kb.on{box-shadow:none;filter:drop-shadow(0 1.6cqw 1.4cqw rgba(0,0,0,.6)) drop-shadow(0 0 2.4cqw rgba(80,150,255,.55))}
+.kb .k{position:absolute;flex:none;height:auto;border-radius:.7cqw;background:none;box-shadow:none;font:700 1.85cqw Roboto,Arial,sans-serif;color:#454c5c;transition:transform .08s,background .12s,box-shadow .12s}
+.kb .k .la{left:.6cqw;top:.35cqw}
+.kb .k .ru{right:.6cqw;bottom:.35cqw;font-size:1.55cqw;color:#cf3029}
+.kb .k.mod{background:none;color:#7a8191;font-size:1.9cqw}
+.kb .k.lit{transform:translateY(.25cqw);background:rgba(66,135,255,.5);box-shadow:0 0 2.6cqw rgba(70,140,255,.95),inset 0 0 0 .25cqw rgba(170,205,255,.95);color:#fff}
+.kb .k.lit .ru{color:#fff}
 </style>
 </head>
 <body>
@@ -177,22 +225,22 @@ button.finbtn.on{background:#e8590c!important;border-color:#ffb37a!important}
   <div class="mon"><div class="scr">
     <div class="tb">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h10l5 5v15H5z" fill="#fff"/><path d="M15 2v5h5" fill="#c9d7ef"/><path d="M8 11h9M8 14h9M8 17h6" stroke="#2b579a" stroke-width="1.6"/></svg>
-      <span class="ttl">Имена.docx</span>
+      <span class="ttl" id="ttl">Имена.docx</span>
       <span class="win"><span>—</span><span>▢</span><span>✕</span></span>
     </div>
     <div class="tool">
       <div class="box">Roboto <i>▾</i></div>
       <div class="box">72 <i>▾</i></div>
       <div class="sep"></div>
-      <div class="b on" style="font-weight:700">Ж</div>
-      <div class="b" style="font-style:italic">К</div>
-      <div class="b" style="text-decoration:underline">Ч</div>
+      <div class="b on biu" style="font-weight:700">Ж</div>
+      <div class="b biu" style="font-style:italic">К</div>
+      <div class="b biu" style="text-decoration:underline">Ч</div>
       <div class="sep"></div>
       <div class="b"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16M2 8h10M2 12h16M2 16h10" stroke="#2c3344" stroke-width="1.8"/></svg></div>
       <div class="b on"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 4h16M5 8h10M2 12h16M5 16h10" stroke="#2c3344" stroke-width="1.8"/></svg></div>
     </div>
     <div class="doc"><div class="sheet" id="sheet"><div class="lines" id="lines"></div></div></div>
-    <div class="st" id="sbar"><span>Страница 1 из 1</span><span>100%</span><span class="fmsg" id="fmsg"></span></div>
+    <div class="st" id="sbar"><span id="pg">Страница 1 из 1</span><span class="clk"><b id="clkT">--:--</b><span id="clkD"></span></span><span>100%</span><span class="fmsg" id="fmsg"></span></div>
   </div><div class="led"></div></div>
   <div class="desk"></div>
   <div class="neck"></div><div class="foot"></div>
@@ -219,9 +267,11 @@ button.finbtn.on{background:#e8590c!important;border-color:#ffb37a!important}
   <input type="file" id="songfile" accept="audio/*" multiple hidden>
   <div id="mline"></div>
   <button class="finbtn wide">🏁 Скоро завершаем</button>
+  <div class="sec">🌐 Язык экрана</div>
+  <div class="lchoice"><button data-l="ru">Русский</button><button data-l="en">English</button></div>
   <div id="st">Не подключено</div>
   <div id="log"></div>
-  <div class="help">Кнопка ⚙ скрывается, когда соединение открыто. Чтобы снова открыть это окно, нажмите 3 раза подряд в левый верхний угол экрана. Музыку можно менять и в эфире: нажмите 3 раза подряд в правый верхний угол — откроется маленькое окно без ключа. Ключ хранится только в этом браузере. Песни из «Мои песни» общие с Принтером. Кнопка «🏁 Скоро завершаем» (есть и в маленьком окне) показывает зрителям, что эфир заканчивается; после перезагрузки страницы она выключена.</div>
+  <div class="help">Кнопка ⚙ скрывается, когда соединение открыто. Чтобы снова открыть это окно, нажмите 3 раза подряд в левый верхний угол экрана. Музыку можно менять и в эфире: нажмите 3 раза подряд в правый верхний угол — откроется маленькое окно без ключа. Ключ хранится только в этом браузере. Песни из «Мои песни» общие с Принтером. Кнопка «🏁 Скоро завершаем» (есть и в маленьком окне) показывает зрителям, что эфир заканчивается; после перезагрузки страницы она выключена. «🌐 Язык экрана» (есть и в маленьком окне) меняет только то, что видят зрители: заголовок, приветствия и фразы на листе; окна настроек остаются на русском. Выбор хранится в этом браузере.</div>
 </div>
 
 <div id="mini" role="dialog" aria-label="Музыка">
@@ -230,6 +280,7 @@ button.finbtn.on{background:#e8590c!important;border-color:#ffb37a!important}
   <div class="mmsg"></div>
   <div class="mrow"><button class="mnext">⏭ Следующая песня</button><button id="mx" aria-label="Закрыть">✕</button></div>
   <div class="mrow"><button class="finbtn">🏁 Скоро завершаем</button></div>
+  <div class="mrow lchoice"><button data-l="ru">🌐 RU</button><button data-l="en">🌐 EN</button></div>
 </div>
 
 <script>
@@ -243,13 +294,26 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const SVGNS='http://www.w3.org/2000/svg';
 
+/* ---------- screen language: only what viewers see (the panels stay Russian); kept in this browser ---------- */
+const LANG={
+  ru:{title:'Имена.docx',page:'Страница 1 из 1',biu:['Ж','К','Ч'],hint:'Нажмите на экран',guest:'ГОСТЬ',hi:n=>'ПРИВЕТ, '+n+'!',
+    idle:['ДОБРО ПОЖАЛОВАТЬ','ХОРОШЕГО НАСТРОЕНИЯ','СПАСИБО, ЧТО ВЫ ЗДЕСЬ','РАДЫ ВСЕМ ГОСТЯМ'],
+    finIdle:['СКОРО ЗАВЕРШАЕМ','СПАСИБО, ЧТО БЫЛИ С НАМИ'],finLine:'СПАСИБО ВСЕМ! ДО ЗАВТРА',
+    finOn:'🏁 Скоро завершаем — спасибо, что были с нами!',finDone:'🙏 Спасибо всем! До завтра 👋'},
+  en:{title:'Names.docx',page:'Page 1 of 1',biu:['B','I','U'],hint:'Tap the screen',guest:'GUEST',hi:n=>'HI, '+n+'!',
+    idle:['WELCOME','HAVE A GREAT DAY','THANK YOU FOR BEING HERE','HAPPY TO SEE EVERYONE'],
+    finIdle:['ENDING SOON','THANK YOU FOR WATCHING'],finLine:'THANK YOU ALL! SEE YOU TOMORROW',
+    finOn:'🏁 Ending soon — thanks for being with us!',finDone:'🙏 Thank you all! See you tomorrow 👋'}};
+let lang=(()=>{try{const v=localStorage.getItem('namesLang');return v==='en'?'en':'ru';}catch(_){return 'ru';}})();
+function L(){return LANG[lang];}
+
 /* ---------- name cleaning: letters, digits, space, _ . - only; uppercase; max 16 characters ---------- */
 function cleanName(raw){
   let s=String(raw==null?'':raw);
   try{s=s.normalize('NFKC');}catch(_){}
   s=s.replace(/[︀-️⃣‍]/g,'').replace(/[\u{E0100}-\u{E01EF}]/gu,'');   /* emoji joiners / variation selectors */
   s=s.replace(/[^\p{L}\p{M}\p{Nd} _.\-]/gu,' ').replace(/\s+/g,' ').trim().toUpperCase();
-  if(!/[\p{L}\p{Nd}]/u.test(s))return 'ГОСТЬ';
+  if(!/[\p{L}\p{Nd}]/u.test(s))return L().guest;
   const a=Array.from(s);
   if(a.length>16)s=a.slice(0,15).join('').trim()+'…';
   return s;
@@ -258,25 +322,25 @@ function cleanName(raw){
 /* ---------- keyboard ---------- */
 const keyMap={},letterKeys=[];let spaceKey,enterKey,bsKey;
 (function buildKb(){
-  const R=[
-    [...'1234567890-'].map(c=>({c})).concat([{m:'⌫',id:'bs',f:1.5}]),
-    [{gap:.5}].concat([['Q','Й'],['W','Ц'],['E','У'],['R','К'],['T','Е'],['Y','Н'],['U','Г'],['I','Ш'],['O','Щ'],['P','З'],['[','Х'],[']','Ъ']].map(([l,r])=>({l,r}))),
-    [{gap:.25}].concat([['A','Ф'],['S','Ы'],['D','В'],['F','А'],['G','П'],['H','Р'],['J','О'],['K','Л'],['L','Д'],[';','Ж'],["'",'Э']].map(([l,r])=>({l,r})),[{m:'↵ Enter',id:'en',f:1.25}]),
-    [{m:'⇧',f:1.25}].concat([['Z','Я'],['X','Ч'],['C','С'],['V','М'],['B','И'],['N','Т'],['M','Ь'],[',','Б'],['.','Ю']].map(([l,r])=>({l,r})),[{m:'⇧',f:2.25}]),
-    [{gap:3}].concat([{m:'',id:'sp',f:6.5}],[{gap:3}])
+  /* key rectangles measured on keyboard.png, in % of the picture: [left, top, width, height] */
+  const KP=[[[2.01,5.26,6.16,15.79],[8.82,5.26,6.07,15.79],[15.28,5.26,6.03,15.79],[21.7,5.26,6.07,15.79],[28.12,5.26,6.07,15.79],[34.59,5.26,5.98,15.79],[40.96,5.26,6.03,15.79],[47.34,5.26,6.07,15.79],[53.76,5.26,5.98,15.79],[60.13,5.26,5.98,15.79],[66.51,5.26,5.98,15.79],[72.88,5.26,5.98,15.79],[79.21,5.26,6.03,15.79],[85.63,5.26,12.23,15.79]],[[2.01,23.51,9.65,15.32],[12.01,23.51,6.07,15.32],[18.47,23.51,6.07,15.32],[24.93,23.51,6.07,15.32],[31.35,23.51,6.07,15.32],[37.82,23.51,6.03,15.32],[44.24,23.51,6.03,15.32],[50.61,23.51,5.98,15.32],[56.99,23.51,5.98,15.32],[63.36,23.51,5.98,15.32],[69.74,23.51,5.98,15.32],[76.11,23.51,6.03,15.32],[82.53,23.51,5.98,15.32],[88.91,23.51,8.91,15.32]],[[1.97,41.52,11.35,14.97],[13.67,41.52,6.07,14.97],[20.09,41.52,6.07,14.97],[26.55,41.52,6.07,14.97],[33.01,41.52,6.03,14.97],[39.43,41.52,6.03,14.97],[45.85,41.52,6.03,14.97],[52.27,41.52,5.98,14.97],[58.65,41.52,5.98,14.97],[65.02,41.52,5.98,14.97],[71.35,41.52,5.98,14.97],[77.77,41.52,5.94,14.97],[84.15,41.52,13.67,14.97]],[[1.97,59.65,14.5,14.5],[16.81,59.65,6.07,14.5],[23.23,59.65,6.11,14.5],[29.69,59.65,6.07,14.5],[36.16,59.65,6.03,14.5],[42.58,59.65,6.03,14.5],[49.0,59.65,5.98,14.5],[55.41,59.65,5.94,14.5],[61.75,59.65,6.03,14.5],[68.12,59.65,6.03,14.5],[74.5,59.65,6.03,14.5],[80.92,59.65,16.9,14.5]],[[2.01,77.54,7.82,14.5],[10.22,77.54,7.82,14.5],[18.43,77.54,7.73,14.5],[26.55,77.54,39.52,14.5],[66.51,77.54,7.6,14.5],[74.54,77.54,7.64,14.5],[82.58,77.54,7.6,14.5],[90.61,77.54,7.21,14.5]]];
+  const P=(l,r)=>({l,r});
+  const LAY=[
+    [P('`','Ё')].concat([...'1234567890'].map(c=>({c})),[{c:'-'},{c:'='},{m:'⌫',id:'bs'}]),
+    [{m:'⇥'}].concat([['Q','Й'],['W','Ц'],['E','У'],['R','К'],['T','Е'],['Y','Н'],['U','Г'],['I','Ш'],['O','Щ'],['P','З'],['[','Х'],[']','Ъ']].map(([l,r])=>P(l,r)),[{c:'\\'}]),
+    [{m:'⇪'}].concat([['A','Ф'],['S','Ы'],['D','В'],['F','А'],['G','П'],['H','Р'],['J','О'],['K','Л'],['L','Д'],[';','Ж'],["'",'Э']].map(([l,r])=>P(l,r)),[{m:'↵',id:'en'}]),
+    [{m:'⇧'}].concat([['Z','Я'],['X','Ч'],['C','С'],['V','М'],['B','И'],['N','Т'],['M','Ь'],[',','Б'],['.','Ю']].map(([l,r])=>P(l,r)),[{c:'/'},{m:'⇧'}]),
+    [{m:''},{m:''},{m:''},{m:'',id:'sp'},{m:''},{m:''},{m:''},{m:''}]
   ];
-  for(const row of R){const rw=document.createElement('div');rw.className='row';
-    for(const k of row){const e=document.createElement('div');e.className='k';
-      if(k.gap){e.className='k gap';e.style.flexGrow=k.gap;rw.appendChild(e);continue;}
-      if(k.f)e.style.flexGrow=k.f;
-      if(k.c){const s=document.createElement('span');s.className='c';s.textContent=k.c;e.appendChild(s);keyMap[k.c]=e;}
-      else if(k.m!==undefined){e.classList.add('mod');const s=document.createElement('span');s.className='c';s.textContent=k.m;e.appendChild(s);
-        if(k.id==='bs')bsKey=e;if(k.id==='en'){enterKey=e;e.classList.add('en');}if(k.id==='sp')spaceKey=e;}
-      else{const a=document.createElement('span');a.className='la';a.textContent=k.l;const b=document.createElement('span');b.className='ru';b.textContent=k.r;e.append(a,b);
-        keyMap[k.l]=e;keyMap[k.r]=e;if(/[A-Z]/.test(k.l))letterKeys.push(e);}
-      rw.appendChild(e);}
-    kbEl.appendChild(rw);}
-  keyMap['Ё']=keyMap['Е'];keyMap['_']=keyMap['-'];keyMap['…']=keyMap['.'];
+  LAY.forEach((row,i)=>row.forEach((k,j)=>{const r=KP[i][j],e=document.createElement('div');e.className='k';
+    e.style.left=r[0]+'%';e.style.top=r[1]+'%';e.style.width=r[2]+'%';e.style.height=r[3]+'%';
+    if(k.c){const s=document.createElement('span');s.className='c';s.textContent=k.c;e.appendChild(s);keyMap[k.c]=e;}
+    else if(k.m!==undefined){e.classList.add('mod');const s=document.createElement('span');s.className='c';s.textContent=k.m;e.appendChild(s);
+      if(k.id==='bs')bsKey=e;if(k.id==='en')enterKey=e;if(k.id==='sp')spaceKey=e;}
+    else{const a=document.createElement('span');a.className='la';a.textContent=k.l;const b=document.createElement('span');b.className='ru';b.textContent=k.r;e.append(a,b);
+      keyMap[k.l]=e;keyMap[k.r]=e;if(/[A-Z]/.test(k.l))letterKeys.push(e);}
+    kbEl.appendChild(e);}));
+  keyMap['_']=keyMap['-'];keyMap['…']=keyMap['.'];
 })();
 /* letters without their own key light the nearest one */
 const NEAR={'Ә':'А','Ғ':'Г','Қ':'К','Ң':'Н','Ө':'О','Ұ':'У','Ү':'У','Һ':'Х','І':'И','Ї':'И','Є':'Э','Ў':'У','Ґ':'Г','Ј':'J','Ђ':'Д','Ћ':'Ч','Љ':'Л','Њ':'Н','Џ':'Ц','Ѕ':'С'};
@@ -431,15 +495,22 @@ function heartSvg(kind){const s=document.createElementNS(SVGNS,'svg');s.setAttri
   const h=document.createElementNS(SVGNS,'ellipse');h.setAttribute('cx','7.4');h.setAttribute('cy','8.4');h.setAttribute('rx','2.3');h.setAttribute('ry','1.3');h.setAttribute('transform','rotate(-35 7.4 8.4)');h.setAttribute('fill','#fff');h.setAttribute('opacity','.75');
   s.append(p,h);return s;}
 function heartEl(anim,kind){const w=document.createElement('span');w.className='hw '+(kind||'blue')+(anim&&!reduced?' pop':'');w.appendChild(heartSvg(kind));return w;}
+const AVC=['#e67e22','#8e44ad','#16a085','#c0392b','#2980b9','#d35400','#27ae60','#b0306a'];
+function avEl(name,url,anim){const a=document.createElement('span');a.className='av'+(anim&&!reduced?' pop':'');
+  let h=0;for(const ch of name)h=(h*31+ch.codePointAt(0))>>>0;a.style.background='linear-gradient(135deg,'+AVC[h%AVC.length]+','+AVC[(h>>>3)%AVC.length]+')';
+  const i=document.createElement('span');i.className='ini';i.textContent=Array.from(name)[0]||'?';a.appendChild(i);
+  if(url){const im=document.createElement('img');im.alt='';im.referrerPolicy='no-referrer';im.onerror=()=>im.remove();im.src=url;a.appendChild(im);}
+  return a;}
 function newLineEl(){const ln=document.createElement('div');ln.className='ln';const tx=document.createElement('span');tx.className='tx';const t=document.createElement('span');t.className='t';
   tx.appendChild(t);ln.appendChild(tx);ln._t=t;ln._tx=tx;return ln;}
 const caret=document.createElement('span');caret.className='cr';
 let cur=newLineEl();cur.appendChild(caret);linesEl.appendChild(cur);
 /* shrink a line so number + name + heart always fit in 92% of the sheet width */
 function fit(ln){const text=ln.dataset.full||'',heart=ln.dataset.h==='1';
-  meas.classList.toggle('grey',ln.classList.contains('grey'));meas.classList.toggle('gold',ln.classList.contains('gold'));   /* a gold line is measured with its bigger gold style */
+  meas.classList.toggle('grey',ln.classList.contains('grey'));meas.classList.toggle('gold',ln.classList.contains('gold'));meas.classList.toggle('fol',ln.classList.contains('fol'));meas.classList.toggle('mid',ln.classList.contains('mid'));   /* a gold line is measured with its bigger gold style */
   meas.style.setProperty('--s','1');measT.textContent=text;
   const old=measTx.querySelector('.hw');if(old)old.remove();if(heart)measTx.appendChild(heartEl(false));
+  const oa=measTx.querySelector('.av');if(oa)oa.remove();if(ln.dataset.av==='1')measTx.insertBefore(avEl('A','',false),measT);
   const w=meas.getBoundingClientRect().width,avail=sheet.clientWidth*.92;
   const s=w>0&&w>avail?Math.max(.2,avail/w*.995):1;ln.style.setProperty('--s',s.toFixed(4));}
 function refitAll(){for(const ln of linesEl.children)if(ln.dataset.full)fit(ln);}
@@ -490,33 +561,49 @@ const hiQ=[],giftQ=[],followQ=[],greetQ=[];let num=0,typed=0,lastDone=Date.now()
 const waiting=()=>hiQ.length+giftQ.length+followQ.length;   /* numbered lines that wait */
 Object.defineProperty(window,'__namesTyped',{get:()=>typed});
 Object.defineProperty(window,'__namesLog',{get:()=>history.slice()});
-function enqueueGift(name,tier){const hi=tier==='gold'||tier==='mega';(hi?hiQ:giftQ).push({kind:'gift',tier:hi?tier:'normal',name});finUI();}
-function enqueueFollow(name){if(followQ.length>=50)return false;followQ.push({kind:'follow',name});finUI();return true;}
+function burst(hw){if(reduced)return;for(let i=0;i<8;i++){const a=Math.PI*2*i/8+rnd(-.2,.2),r=rnd(.75,1.15),e=document.createElement('span');e.className='bh';
+  e.style.setProperty('--bx',(Math.cos(a)*r).toFixed(2)+'em');e.style.setProperty('--by',(Math.sin(a)*r).toFixed(2)+'em');e.appendChild(heartSvg('red'));hw.appendChild(e);setTimeout(()=>e.remove(),1300);}}
+let pinkTO=0;function midGlow(){if(reduced)return;monEl.classList.remove('pinkglow');void monEl.offsetWidth;monEl.classList.add('pinkglow');clearTimeout(pinkTO);pinkTO=setTimeout(()=>monEl.classList.remove('pinkglow'),1200);}
+function enqueueGift(name,tier,pic){const hi=tier==='gold'||tier==='mega';(hi?hiQ:giftQ).push({kind:'gift',tier:hi?tier:tier==='mid'?'mid':'normal',name,pic:pic||''});finUI();}
+function enqueueFollow(name,pic){if(followQ.length>=50)return false;followQ.push({kind:'follow',name,pic:pic||''});finUI();return true;}
 function enqueueGreet(name){if((finOn&&finDone)||greetQ.length>=2)return false;greetQ.push(name);return true;}
-const IDLE=['ДОБРО ПОЖАЛОВАТЬ','ХОРОШЕГО НАСТРОЕНИЯ','СПАСИБО, ЧТО ВЫ ЗДЕСЬ','РАДЫ ВСЕМ ГОСТЯМ'];
 function setTyping(on){kbEl.classList.toggle('on',on);cur.classList.toggle('typing',on);}
 
 /* «🏁 Скоро завершаем» (memory only: off after a reload) */
-const FIN_IDLE=['СКОРО ЗАВЕРШАЕМ','СПАСИБО, ЧТО БЫЛИ С НАМИ'],FIN_LINE='СПАСИБО ВСЕМ! ДО ЗАВТРА',FIN_WAIT=60000;
+const FIN_WAIT=60000;   /* the closing texts are in LANG */
 let finOn=false,finSince=0,finDone=false,finFirst=false,finI=0,finKey='';
 function finUI(){
   const green=finOn&&finDone&&!busyNum&&!waiting(),key=!finOn?'off':green?'done':'on';if(key===finKey)return;finKey=key;
   const bar=$('sbar');bar.classList.toggle('fin',finOn);bar.classList.toggle('done',green);
-  $('fmsg').textContent=!finOn?'':green?'🙏 Спасибо всем! До завтра 👋':'🏁 Скоро завершаем — спасибо, что были с нами!';
+  $('fmsg').textContent=!finOn?'':green?L().finDone:L().finOn;
   document.querySelectorAll('.finbtn').forEach(b=>b.classList.toggle('on',finOn));
 }
 function setFinal(on){finOn=!!on;finSince=Date.now();finDone=false;finFirst=finOn;finI=0;finUI();}
 document.querySelectorAll('.finbtn').forEach(b=>b.addEventListener('click',()=>setFinal(!finOn)));
 
+/* screen language: the title, page counter, B/I/U letters and hint change at once; lines already on the sheet stay, the next ones use the new language */
+function langUI(){const t=L();$('ttl').textContent=t.title;$('pg').textContent=t.page;document.querySelectorAll('.tool .biu').forEach((b,i)=>b.textContent=t.biu[i]);
+  $('hint').textContent=t.hint;document.querySelectorAll('.lchoice button').forEach(b=>b.classList.toggle('on',b.dataset.l===lang));
+  try{document.documentElement.lang=lang;}catch(_){}finKey='';finUI();refitAll();}
+function setLang(v){lang=v==='en'?'en':'ru';try{localStorage.setItem('namesLang',lang);}catch(_){}langUI();}
+document.querySelectorAll('.lchoice button').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.l)));
+langUI();
+
 /* one numbered line: a gift (red heart; gold line and gold heart for expensive ones) or a new follower (blue heart) */
 async function typeNumbered(it){
   busyNum=true;finUI();
-  num++;const text=num+'. '+it.name,mega=it.tier==='mega',hi=mega||it.tier==='gold',hk=it.kind==='follow'?'blue':hi?'gold':'red';
+  const fol=it.kind==='follow';if(!fol)num++;   /* only gifts get a number; a new follower gets a smaller line without one */
+  const text=fol?it.name:num+'. '+it.name,mega=it.tier==='mega',hi=mega||it.tier==='gold',hk=fol?'blue':hi?'gold':'red';
   const fast=()=>!hi&&waiting()>6;   /* a long queue is typed faster, but never a gold line */
-  cur.classList.remove('grey');cur.classList.toggle('gold',hi);cur.dataset.full=text;cur.dataset.h='1';fit(cur);setTyping(true);duck(true);
-  for(const ch of Array.from(text)){cur._t.textContent+=ch;press(ch);await sleep(mega?rnd(170,260):fast()?rnd(40,70):rnd(85,180)+(ch===' '?rnd(60,140):0));}
+  cur.classList.remove('grey');cur.classList.toggle('gold',hi);cur.classList.toggle('fol',fol);cur.classList.toggle('mid',it.tier==='mid');cur.dataset.full=text;cur.dataset.h='1';cur.dataset.av='1';fit(cur);setTyping(true);duck(true);
+  /* number first («12.»), then the sender's picture, then the name */
+  const typeInto=async(el,str)=>{for(const ch of Array.from(str)){el.textContent+=ch;press(ch);await sleep(mega?rnd(170,260):fast()?rnd(40,70):rnd(85,180)+(ch===' '?rnd(60,140):0));}};
+  if(!fol){const numEl=document.createElement('span');numEl.className='t';cur._tx.insertBefore(numEl,cur._t);await typeInto(numEl,num+'.');}
+  cur._tx.insertBefore(avEl(it.name,it.pic||'',true),cur._t);press(' ');await sleep(fast()?60:240);
+  await typeInto(cur._t,it.name);
   const hw=heartEl(true,hk);cur._tx.appendChild(hw);floatHearts(hw,hk);
   if(hi){sparks(hw);monGlow();}if(mega)confetti();
+  if(it.tier==='mid'){burst(hw);midGlow();}   /* 30–99 coins: bigger heart, a burst of small hearts, a soft pink flash */
   await sleep(mega?1500:hi?900:fast()?220:560);
   press('\n');typed++;history.push(it.kind==='follow'?{kind:'follow',text}:{kind:'gift',tier:it.tier,text});
   enterLine();setTyping(true);lastDone=Date.now();if(!waiting())duck(false);   /* the next queued name keeps the music low */
@@ -537,12 +624,15 @@ async function typeGrey(text,lo,hi){
   cur.classList.remove('grey');delete cur.dataset.full;cur.style.removeProperty('--s');lastDone=Date.now();
 }
 /* the one permanent closing line: normal blue, no number, no heart, not erased */
-async function typeFinalLine(){
+async function typeFinalLine(){const FIN_LINE=L().finLine;
   cur.classList.remove('grey','gold');cur.dataset.full=FIN_LINE;cur.dataset.h='0';fit(cur);setTyping(true);
   for(const ch of Array.from(FIN_LINE)){cur._t.textContent+=ch;press(ch);await sleep(rnd(85,180)+(ch===' '?rnd(60,140):0));}
   await sleep(500);press('\n');history.push({kind:'final',text:FIN_LINE});
   enterLine();setTyping(true);lastDone=Date.now();await sleep(240);setTyping(false);
 }
+/* live clock + date: shows viewers the stream is live, not a recording */
+function clk(){const d=new Date(),p=n=>String(n).padStart(2,'0');$('clkT').textContent=p(d.getHours())+':'+p(d.getMinutes());$('clkD').textContent=p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+d.getFullYear();}
+clk();setInterval(clk,5000);
 (async function loop(){
   try{if(document.fonts&&document.fonts.load)await Promise.race([Promise.all([document.fonts.load('800 40px "Roboto Condensed"','AZ АЯ ӘҒҚҢӨҰҮҺІ 0123'),document.fonts.load('700 20px Roboto','Ж')]),sleep(1500)]);}catch(_){}
   refitAll();
@@ -553,9 +643,9 @@ async function typeFinalLine(){
       duck(false);finUI();
       if(finOn&&!finDone&&Date.now()-finSince>=FIN_WAIT){finDone=true;greetQ.length=0;finUI();await typeFinalLine();continue;}   /* typed once per «Скоро завершаем» */
       if(finOn&&finDone){greetQ.length=0;await sleep(100);continue;}   /* after the closing line: no greetings, no idle phrases */
-      if(finOn&&finFirst){finFirst=false;await typeGrey(FIN_IDLE[finI++%FIN_IDLE.length],60,130);continue;}
-      if(greetQ.length){await typeGrey('ПРИВЕТ, '+greetQ.shift()+'!',60,130);continue;}
-      if(Date.now()-lastDone>=10000){await typeGrey(finOn?FIN_IDLE[finI++%FIN_IDLE.length]:IDLE[idleI++%IDLE.length],60,130);continue;}
+      if(finOn&&finFirst){finFirst=false;await typeGrey(L().finIdle[finI++%L().finIdle.length],60,130);continue;}
+      if(greetQ.length){await typeGrey(L().hi(greetQ.shift()),60,130);continue;}
+      if(Date.now()-lastDone>=10000){await typeGrey(finOn?L().finIdle[finI++%L().finIdle.length]:L().idle[idleI++%L().idle.length],60,130);continue;}
     }catch(e){setTyping(false);busyNum=false;duck(false);ttLog('ошибка печати: '+(e&&e.message));}
     await sleep(100);
   }
@@ -600,7 +690,10 @@ function ttConnect(){
 function ttUser(u){u=u||{};
   const pname=String(u.nickname||u.displayId||u.uniqueId||u.secUid||'Зритель').trim().slice(0,24)||'Зритель';
   const raw=[u.nickname,u.displayId,u.uniqueId].map(x=>x==null?'':String(x).trim()).find(x=>x)||'';
-  return {name:raw?cleanName(raw):'ГОСТЬ',id:String(u.userId||u.id||u.idStr||pname)};}
+  /* profile picture: same fields and choice as the printer's ttUser (https only, a non-webp link first) */
+  let pic='';for(const p of [u.avatarThumb,u.avatarMedium,u.avatarLarge,u.profilePicture]){if(!p)continue;const l=p.urlList||p.url||p.urls||p.url_list;
+    if(Array.isArray(l))pic=l.find(x=>typeof x==='string'&&/^https:/.test(x)&&!/\.webp(\?|$)/i.test(x))||l.find(x=>typeof x==='string'&&/^https:/.test(x))||'';if(pic)break;}
+  return {name:raw?cleanName(raw):L().guest,id:String(u.userId||u.id||u.idStr||pname),pic};}
 function ttHandle(m){
   const t=m&&m.type,d=(m&&m.data)||{};
   ttTypes[t]=(ttTypes[t]||0)+1;
@@ -610,9 +703,10 @@ function ttHandle(m){
     const now=Date.now(),rec=ttStreak[key],prev=rec&&now-rec.t<8000?rec.n:0,cnt=Math.max(1,+(d.repeatCount||d.comboCount||1)),add=Math.min(20,cnt-prev);
     if(d.repeatEnd===1||d.repeatEnd===true)delete ttStreak[key];else ttStreak[key]={n:Math.max(prev,cnt),t:now};
     /* gift value, read like the printer's ttGiftOf: 100+ = gold line, 1000+ = gold line with confetti. The value is never shown on the stage. */
-    const g=d.gift||d.giftDetails||d.extendedGiftInfo||{},dia=+(g.diamondCount||g.diamond_count||d.diamondCount||0),tier=dia>=1000?'mega':dia>=100?'gold':'normal';
+    const g=d.gift||d.giftDetails||d.extendedGiftInfo||{},dia=+(g.diamondCount||g.diamond_count||d.diamondCount||0),nm=String(g.name||g.giftName||d.giftName||'').toLowerCase(),
+      tier=dia>=1000?'mega':/rose|роза/.test(nm)?'normal':/donut|пончик/.test(nm)?'mid':dia>=100?'gold':dia>=30?'mid':'normal';   /* same order as the printer's ttGiftOf */
     if(!(add>0)){ttLog();return;}ttStats.gift+=add;ttLog('🎁 '+v.name+' ×'+add+' · 💎'+(dia>0?dia:'?'));
-    for(let i=0;i<add;i++)enqueueGift(v.name,tier);}
+    for(let i=0;i<add;i++)enqueueGift(v.name,tier,v.pic);}
   else if(t==='WebcastMemberMessage'){const v=ttUser(d.user);ttStats.member++;const ok=enqueueGreet(v.name);ttLog('👋 зритель: '+v.name+(ok?'':' (пропущен)'));}
   else if(t==='WebcastLikeMessage'){ttStats.like+=Math.max(1,+(d.count||d.likeCount||1));ttLog();}
   else if(t==='WebcastChatMessage'){ttStats.chat++;ttLog();}
@@ -620,7 +714,7 @@ function ttHandle(m){
     if(socialN<5){socialN++;ttLog('соц. событие: action='+String(d.action)+' · key='+String((dt&&dt.key)||JSON.stringify(dt)).slice(0,80));}   /* raw data, to see on a real stream how follows arrive */
     if(/follow/i.test(k)||d.action===1||d.action==='1'){ttStats.follow++;const v=ttUser(d.user);
       if(followSeen.has(v.id))ttLog('➕ подписка: '+v.name+' (повтор — пропущена)');
-      else if(!enqueueFollow(v.name))ttLog('➕ подписка: '+v.name+' (очередь полна — пропущена)');
+      else if(!enqueueFollow(v.name,v.pic))ttLog('➕ подписка: '+v.name+' (очередь полна — пропущена)');
       else{followSeen.add(v.id);ttLog('➕ подписка: '+v.name);}}
     else ttLog();}
   else if(t==='roomInfo'){ttLog('эфир найден');}
@@ -684,14 +778,16 @@ if(TEST){
   const box=document.createElement('div');box.id='tbtns';stage.appendChild(box);
   const SAMPLE=['Азамат','Әсем','Қуаныш','Нұрсұлтан','Гүлназ','Айгерім','Өмірзақ','Ұлжан','Іңкәр','Dana_77','Ержан','Мадина','Ruslan.k','Жанар','Һамит','Arman-kz','Сәуле','Ғалым'];
   const pick=()=>SAMPLE[Math.floor(Math.random()*SAMPLE.length)];let tid=1;
+  const TPIC=['woman','man_sun','cat','sunset','puppy','flowers','mountains','girl','coffee','man_laugh','horse'];
+  const tuser=()=>{const u={userId:'t'+(tid++),nickname:pick()};if(Math.random()<.7)u.avatarThumb={urlList:[new URL('img/av_'+TPIC[Math.floor(Math.random()*TPIC.length)]+'.jpg',location.href).href]};return u;};
   /* every test button sends a fake message through ttHandle, the same way real events arrive */
-  const gift=val=>{const data={user:{userId:'t'+(tid++),nickname:pick()},giftId:5655,repeatCount:1,repeatEnd:1};if(val)data.gift={diamondCount:val};ttHandle({type:'WebcastGiftMessage',data});};
-  const join=()=>{ttHandle({type:'WebcastMemberMessage',data:{user:{userId:'t'+(tid++),nickname:pick()}}});};
-  const follow=()=>{ttHandle({type:'WebcastSocialMessage',data:{user:{userId:'t'+(tid++),nickname:pick()},common:{displayText:{key:'pm_main_follow_message_viewer_2'}},action:1}});};
+  const gift=val=>{const data={user:tuser(),giftId:5655,repeatCount:1,repeatEnd:1};if(val)data.gift={diamondCount:val};ttHandle({type:'WebcastGiftMessage',data});};
+  const join=()=>{ttHandle({type:'WebcastMemberMessage',data:{user:tuser()}});};
+  const follow=()=>{ttHandle({type:'WebcastSocialMessage',data:{user:tuser(),common:{displayText:{key:'pm_main_follow_message_viewer_2'}},action:1}});};
   const mk=(t,f)=>{const e=document.createElement('button');e.textContent=t;e.addEventListener('click',f);box.appendChild(e);return e;};
   let demo=null;const demoB=mk('Демо',()=>{if(demo){clearTimeout(demo);demo=null;demoB.classList.remove('on');demoB.textContent='Демо';return;}
-    demoB.classList.add('on');demoB.textContent='■ Демо';const step=()=>{const r=Math.random();r<.5?gift():r<.7?join():r<.85?follow():r<.95?gift(199):gift(1000);demo=setTimeout(step,rnd(700,3500));};step();});
-  mk('+ Подарок',()=>gift());mk('+ Зритель',join);mk('+ Подписка',follow);mk('+ Дорогой',()=>gift(199));mk('+ Лев',()=>gift(1000));
+    demoB.classList.add('on');demoB.textContent='■ Демо';const step=()=>{const r=Math.random();r<.4?gift():r<.5?gift(30):r<.7?join():r<.85?follow():r<.95?gift(199):gift(1000);demo=setTimeout(step,rnd(700,3500));};step();});
+  mk('+ Подарок',()=>gift());mk('+ Зритель',join);mk('+ Подписка',follow);mk('+ Пончик',()=>gift(30));mk('+ Дорогой',()=>gift(199));mk('+ Лев',()=>gift(1000));
 }
 })();
 </script>

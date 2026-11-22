@@ -102,7 +102,8 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:system-ui,-app
 #rlines div.new{animation:rnew 1.2s ease-out}
 @keyframes rnew{0%{background:#ffe08a}100%{background:transparent}}
 /* idle hint */
-#hint{position:absolute;left:50%;top:62%;transform:translateX(-50%);z-index:8;opacity:0;transition:opacity .5s;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis;
+#hint{position:absolute;left:41%;top:62%;transform:translateX(-50%);z-index:8;opacity:0;transition:opacity .5s;white-space:nowrap;max-width:76%;   /* stays left of TikTok's button column (right 20 %) */
+  overflow:hidden;text-overflow:ellipsis;
   background:rgba(30,18,40,.66);padding:.6vh 1.4vh;border-radius:2vh;font-weight:700;font-size:1.55vh}
 #hint.show{opacity:1}
 
@@ -110,7 +111,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:system-ui,-app
 .slot{z-index:4}
 .slot .nm,#honor .nm{position:absolute;left:50%;bottom:-1.1vh;transform:translateX(-50%);max-width:122%;z-index:3;background:rgba(20,12,28,.84);color:#fff;font:800 1.3vh system-ui,sans-serif;padding:.3vh .75vh;border-radius:1vh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 .2vh .5vh rgba(0,0,0,.4)}
 .slot.gold .nm{color:#ffe08a;border:1px solid rgba(255,210,90,.7)}
-#honor .nm{bottom:-1.4vh;max-width:118%;font-size:1.45vh;color:#ffe08a;border:1px solid rgba(255,210,90,.8)}
+#honor .nm{bottom:-1.4vh;max-width:100%;font-size:1.45vh;color:#ffe08a;border:1px solid rgba(255,210,90,.8)}
 
 /* music */
 #mm{display:none;flex-direction:column;gap:.8vh;background:#1c1530;border:1px solid rgba(255,255,255,.14);border-radius:1.3vh;padding:1vh}
@@ -210,7 +211,7 @@ const nameLang=n=>/[әіңғүұқөһӘІҢҒҮҰҚӨҺ]/.test(n)?'kz':/[А-Я�
 function fit(){const W=stage.clientWidth,H=stage.clientHeight;let w,h;
   if(W/H>IMG_AR){w=W;h=W/IMG_AR;}else{h=H;w=H*IMG_AR;}
   Object.assign(scene.style,{width:w+'px',height:h+'px',left:(W-w)/2+'px',top:(H-h)/2+'px'});}
-new ResizeObserver(fit).observe(stage);fit();
+new ResizeObserver(()=>{fit();try{fitHint();}catch(_){}}).observe(stage);fit();
 
 /* ---------- demo avatar + thermal dithering ---------- */
 function demoAvatar(){
@@ -410,7 +411,7 @@ async function printJob(j){
   if(j.tier===3&&j.total>=honorCoins){   /* hall of honour: stays until a bigger 1000+ gift arrives */
     honorCoins=j.total;const h=$('honor'),hi=$('honimg');
     if(!h.classList.contains('on')){h.style.visibility='hidden';h.classList.add('on');}
-    const old=hi.src;hi.src=url;$('honnm').textContent=j.name;await new Promise(r=>{if(hi.complete)r();else hi.onload=r;});
+    const old=hi.src;hi.src=url;{const hn=$('honnm');hn.textContent=j.name;hn.style.fontSize=j.name.length>13?'1.05vh':j.name.length>9?'1.2vh':'';}await new Promise(r=>{if(hi.complete)r();else hi.onload=r;});
     target=hi;done=()=>{h.style.visibility='visible';h.classList.remove('pop');void h.offsetWidth;h.classList.add('pop');};
     if(old){h.style.visibility='visible';}
   }else{
@@ -469,9 +470,11 @@ function receipt(name,kind,silent){name=cleanName(name);rNo++;const d=document.c
   while($('rlines').children.length>30)$('rlines').firstChild.remove();if(!silent)tick();}
 
 /* ---------- idle hints (no gift wording) ---------- */
+/* the hint shrinks its font until the whole text fits on one line */
+function fitHint(){const h=$('hint');h.style.fontSize='';let fs=parseFloat(getComputedStyle(h).fontSize);for(let i=0;i<40&&h.scrollWidth>h.clientWidth+.5&&fs>7;i++){fs-=.4;h.style.fontSize=fs+'px';}}
 let hintI=0;
 function hintText(){const H=[tr('🖨 Здесь печатаются фото зрителей',"🖨 Viewers' photos get printed here"),tr('✍️ Напиши в чат !тілек — напечатаю пожелание','✍️ Type !wish in chat — I will print you a wish')];return H[hintI%H.length];}
-setInterval(()=>{if(!sleeping)return;const h=$('hint');h.style.opacity='0';setTimeout(()=>{hintI++;h.textContent=hintText();h.style.opacity='';},500);},4500);
+setInterval(()=>{if(!sleeping)return;const h=$('hint');h.style.opacity='0';setTimeout(()=>{hintI++;h.textContent=hintText();fitHint();h.style.opacity='';},500);},4500);
 
 
 /* ---------- music: the game's own lo-fi melody (made by code, no copyright) or the owner's songs ---------- */
@@ -565,7 +568,7 @@ function fitHd(){const t=$('rcpt').querySelector('.tape'),w=t.clientWidth-parseF
 new ResizeObserver(fitHd).observe($('rcpt'));
 if(document.fonts){document.fonts.ready.then(fitHd);document.fonts.addEventListener&&document.fonts.addEventListener('loadingdone',()=>setTimeout(fitHd,50));}
 setInterval(fitHd,2500);   /* the web font can arrive late and is wider than the phone font */
-function applyLang(){$('lang').textContent=LANG.toUpperCase();updQ();$('rhd').dataset.t=tr('НОВЫЕ ДРУЗЬЯ','NEW FRIENDS');$('rhd').innerHTML='';fitHd();$('hint').textContent=hintText();}
+function applyLang(){$('lang').textContent=LANG.toUpperCase();updQ();$('rhd').dataset.t=tr('НОВЫЕ ДРУЗЬЯ','NEW FRIENDS');$('rhd').innerHTML='';fitHd();$('hint').textContent=hintText();fitHint();}
 $('lang').addEventListener('click',()=>{LANG=LANG==='en'?'ru':'en';try{localStorage.setItem('stLang',LANG);}catch(_){}applyLang();});
 $('zb').addEventListener('click',()=>{$('zones').classList.toggle('on');$('zb').classList.toggle('on');});
 $('hide').addEventListener('click',()=>{$('panel').classList.add('hide');try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(_){}});

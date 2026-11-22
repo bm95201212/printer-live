@@ -123,6 +123,15 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:system-ui,-app
 #mm #mNow{font:600 1.45vh system-ui,sans-serif;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #credit{display:none;position:absolute;right:2.5%;top:12.6%;z-index:8;font:600 1.25vh system-ui,sans-serif;color:rgba(255,255,255,.8);background:rgba(0,0,0,.28);padding:.3vh .8vh;border-radius:1vh}
 #credit.on{display:block}
+
+/* gift guide (same idea as names.html #gguide): emoji + what the sticker looks like, no prices; shown 8 s once a minute while the printer is free */
+#gguide{position:absolute;z-index:9;left:7%;right:7%;top:12.8%;display:grid;grid-template-columns:1fr 1fr;gap:.7vh 2.2vh;padding:.9vh 1.8vh;border-radius:1.6vh;
+  background:rgba(14,10,8,.55);backdrop-filter:blur(.6vh);-webkit-backdrop-filter:blur(.6vh);box-shadow:0 .6vh 1.8vh rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.14);
+  color:#fff;font:700 1.6vh/1.15 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;opacity:0;transform:translateY(-.8vh);transition:opacity .6s,transform .6s;pointer-events:none}
+#gguide.show{opacity:.94;transform:none}
+#gguide .gi{display:flex;align-items:center;gap:.9vh;white-space:nowrap;min-width:0}
+#gguide .gi b{font-size:2.4vh;line-height:1;font-weight:400}
+#gguide .gi span{overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -146,6 +155,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:system-ui,-app
   <div id="welcome"></div>
   <div id="credit">♪ Music: Bensound.com</div>
   <div id="hint"></div>
+  <div id="gguide" aria-hidden="true"><div class="gi"><b>🌹</b><span></span></div><div class="gi"><b>🍩</b><span></span></div><div class="gi"><b>💎</b><span></span></div><div class="gi"><b>🦁</b><span></span></div></div>
   <div id="queue">⏳ <span id="qlab">Очередь</span>: <b id="qn">0</b><small id="qnow">&nbsp;</small></div>
 
   <div id="zones">
@@ -160,7 +170,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:system-ui,-app
     <div class="r"><button data-ev="join">👋 Вход</button><button data-ev="follow">➕ Подписка</button><button data-ev="share">↗ Репост</button><button data-ev="wish">✍ !тілек</button></div>
     <div class="r"><input type="text" id="who" maxlength="18" placeholder="Имя (пусто — случайное)"><button id="photo">📷 Фото</button></div>
     <div class="r"><button id="auto">Авто ▶</button><button id="snd" class="on">🔈 Звук</button><button id="mus">🎵 Музыка</button></div>
-    <div class="r"><button id="lang">RU</button><button id="zb">👁 Зоны</button><button id="hide">⛶ Эфир</button></div>
+    <div class="r"><button id="lang">RU</button><button id="gdb">🎁 Подсказка</button><button id="zb">👁 Зоны</button><button id="hide">⛶ Эфир</button></div>
     <div id="mm">
       <div class="r"><button id="mGen">🎵 Мелодия игры</button><button id="mOwn">📁 Мои песни</button><button id="mAdd">➕</button><button id="mOff">⏹</button></div>
       <div class="vol">🔉 <input type="range" id="mVol" min="0" max="100" step="5" value="30"> <b id="mVolv">30%</b></div>
@@ -376,7 +386,7 @@ function animH(el,H,dur){return new Promise(res=>{const t0=performance.now();
     if(k<1)requestAnimationFrame(f);else{el.style.height=H+'px';res();}})(t0);});}
 
 async function printJob(j){
-  await fontsReady;await wake();
+  guideHide();await fontsReady;await wake();
   const T0=TIER[j.tier],paper=drawPaper(j.av,j.name,j.tier,j.count),feed=$('feed'),prw=$('prw');
   feed.innerHTML='';feed.style.height='0px';feed.appendChild(paper);feed.classList.add('has');
   const H=Math.round(feed.clientWidth*paper.height/paper.width);
@@ -427,7 +437,7 @@ async function printJob(j){
 
 /* ---------- !тілек slip: quick print, quick cut, short show, drops away ---------- */
 async function printSlip(j){
-  await fontsReady;await wake();
+  guideHide();await fontsReady;await wake();
   const paper=drawSlip(j.name),feed=$('feed'),prw=$('prw');
   feed.innerHTML='';feed.style.height='0px';feed.appendChild(paper);feed.classList.add('has');
   const H=Math.round(feed.clientWidth*paper.height/paper.width);
@@ -459,7 +469,7 @@ function chatMsg(name,text){name=cleanName(name);   /* only the fixed command; v
 const greet=n=>{const lg=nameLang(n);return lg==='kz'?'👋 Қош келдің, '+n+'!':lg==='ru'?'👋 Привет, '+n+'!':'👋 Привет, '+n+'! Welcome!';};
 let welQ=null,welOn=false;
 function welcome(name){welQ=cleanName(name);if(!welOn)nextWelcome();}
-function nextWelcome(){if(!welQ){welOn=false;return;}welOn=true;const w=$('welcome');w.textContent=greet(welQ);welQ=null;w.classList.add('show');
+function nextWelcome(){if(!welQ){welOn=false;return;}welOn=true;try{guideHide();}catch(_){}const w=$('welcome');w.textContent=greet(welQ);welQ=null;w.classList.add('show');
   if(sleeping){const l=$('led');l.classList.add('peek');setTimeout(()=>l.classList.remove('peek'),800);}
   setTimeout(()=>{w.classList.remove('show');setTimeout(nextWelcome,350);},2000);}
 
@@ -540,6 +550,19 @@ $('mCred').addEventListener('change',e=>{MUS.cred=e.target.checked;musApply();})
 /* browsers allow sound only after the first tap: start the music then */
 document.addEventListener('pointerdown',function first(){document.removeEventListener('pointerdown',first,true);ac();sfxLoad();if(MUS.mode==='own'&&!songs.length)MUS.mode='gen';musApply();},true);
 
+/* ---------- gift guide: first 10 s after load, then every 60 s, for 8 s; skipped while a sticker is printing, hidden when a job starts ---------- */
+const GUIDE={ru:['Фото-стикер','С узором','Золотой','Место почёта 🏆'],en:['Photo sticker','Ornament','Golden','Hall of fame 🏆']};
+const GUIDE_EVERY=60000,GUIDE_SHOW=8000;
+let guideOn=(()=>{try{return localStorage.getItem('stGuide')!=='0';}catch(_){return true;}})(),guideT=0;
+function guideText(){const sp=[...document.querySelectorAll('#gguide .gi span')];sp.forEach((e,i)=>e.textContent=GUIDE[LANG][i]);
+  /* shrink the guide's font until every text fits (phone fonts differ) */
+  const g=$('gguide');g.style.fontSize='';let fs=parseFloat(getComputedStyle(g).fontSize);for(let i=0;i<30&&sp.some(e=>e.scrollWidth>e.clientWidth+.5)&&fs>7;i++){fs-=.4;g.style.fontSize=fs+'px';}}
+function guideHide(){clearTimeout(guideT);$('gguide').classList.remove('show');}
+function guideShow(force){if(!guideOn||(!force&&busy))return;guideText();const g=$('gguide');g.classList.add('show');clearTimeout(guideT);guideT=setTimeout(()=>g.classList.remove('show'),GUIDE_SHOW);}
+function guideUI(){$('gdb').textContent='🎁 Подсказка: '+(guideOn?'вкл':'выкл');$('gdb').classList.toggle('on',guideOn);if(!guideOn)guideHide();}
+$('gdb').addEventListener('click',()=>{guideOn=!guideOn;try{localStorage.setItem('stGuide',guideOn?'1':'0');}catch(_){}guideUI();if(guideOn)guideShow(true);});
+guideUI();setTimeout(()=>{guideShow();setInterval(guideShow,GUIDE_EVERY);},10000);
+
 /* ---------- demo panel ---------- */
 let nextPhoto=null;
 document.querySelectorAll('#panel [data-g]').forEach(b=>b.addEventListener('click',()=>{ac();sendGift(b.dataset.g,$('who').value,nextPhoto,+(b.dataset.n||1));nextPhoto=null;$('photo').classList.remove('on');$('photo').textContent='📷 Фото';}));
@@ -568,7 +591,7 @@ function fitHd(){const t=$('rcpt').querySelector('.tape'),w=t.clientWidth-parseF
 new ResizeObserver(fitHd).observe($('rcpt'));
 if(document.fonts){document.fonts.ready.then(fitHd);document.fonts.addEventListener&&document.fonts.addEventListener('loadingdone',()=>setTimeout(fitHd,50));}
 setInterval(fitHd,2500);   /* the web font can arrive late and is wider than the phone font */
-function applyLang(){$('lang').textContent=LANG.toUpperCase();updQ();$('rhd').dataset.t=tr('НОВЫЕ ДРУЗЬЯ','NEW FRIENDS');$('rhd').innerHTML='';fitHd();$('hint').textContent=hintText();fitHint();}
+function applyLang(){$('lang').textContent=LANG.toUpperCase();try{guideText();}catch(_){}updQ();$('rhd').dataset.t=tr('НОВЫЕ ДРУЗЬЯ','NEW FRIENDS');$('rhd').innerHTML='';fitHd();$('hint').textContent=hintText();fitHint();}
 $('lang').addEventListener('click',()=>{LANG=LANG==='en'?'ru':'en';try{localStorage.setItem('stLang',LANG);}catch(_){}applyLang();});
 $('zb').addEventListener('click',()=>{$('zones').classList.toggle('on');$('zb').classList.toggle('on');});
 $('hide').addEventListener('click',()=>{$('panel').classList.add('hide');try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(_){}});

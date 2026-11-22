@@ -171,7 +171,15 @@ button.mnext:disabled{opacity:.45}
 #mini button{min-height:48px;min-width:48px;font:700 16px Roboto,Arial,sans-serif;padding:8px 12px;border-radius:10px;border:1px solid #3a4157;background:#262b3c;color:#fff;cursor:pointer}
 #mini .mchoice{margin-top:0}
 #mini .mrow{display:flex;gap:8px;margin-top:10px}
-#mini .mrow .mnext,#mini .mrow .finbtn{flex:1}
+#mini .mrow .mnext,#mini .mrow .finbtn,#mini .mrow .gdbtn{flex:1}
+/* small gift guide on the wall above the monitor: shown briefly now and then; no coin numbers, no call to send gifts */
+#gguide{position:absolute;z-index:6;left:6cqw;right:6cqw;top:19.8cqw;display:grid;grid-template-columns:1fr 1fr;gap:1.4cqw 2.4cqw;padding:2.2cqw 3.2cqw;border-radius:3cqw;
+  background:rgba(14,10,8,.52);backdrop-filter:blur(1.2cqw);-webkit-backdrop-filter:blur(1.2cqw);box-shadow:0 1cqw 3cqw rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.14);
+  color:#fff;font:600 3.5cqw/1.15 Roboto,Arial,sans-serif;opacity:0;transform:translateY(-1.5cqw);transition:opacity .6s,transform .6s;pointer-events:none}
+#gguide.show{opacity:.92;transform:none}
+#gguide .gi{display:flex;align-items:center;gap:1.6cqw;white-space:nowrap;min-width:0}
+#gguide .gi b{font-size:5cqw;line-height:1;font-weight:400}
+#gguide .gi span{overflow:hidden;text-overflow:ellipsis}
 button.finbtn.on{background:#e8590c!important;border-color:#ffb37a!important}
 /* screen language (RU/EN) buttons */
 #pan .lchoice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
@@ -185,7 +193,7 @@ button.finbtn.on{background:#e8590c!important;border-color:#ffb37a!important}
 /* ===== photo scene (Nano Banana): wall + desk, monitor and keyboard as cut-out photos ===== */
 #stage{background:#120b07 url(img/names_bg.jpg) center top/100% auto no-repeat}
 .desk,.neck,.foot,.led{display:none}
-/* the desk line in bg.jpg is at 69.5% of its height = 124.5cqw from the top (the photo is scaled to the stage width) */
+/* the desk line in names_bg.jpg (900x2200) is 1120 px from its top = 124.5cqw from the top of the stage (the photo is scaled to the stage width) */
 .mon{top:37cqw;left:.25cqw;right:auto;width:99.5cqw;height:101cqw;padding:0;border-radius:0;background:none;box-shadow:none}
 .mon::after{content:"";position:absolute;inset:0;background:url(img/names_monitor.png) center/100% 100% no-repeat;pointer-events:none;z-index:3;filter:drop-shadow(0 1.2cqw 1.2cqw rgba(0,0,0,.45))}
 .mon::before{content:"";position:absolute;left:24%;right:24%;top:94.2%;height:5.2%;background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(0,0,0,.55),rgba(0,0,0,0) 72%);pointer-events:none;z-index:2}
@@ -246,6 +254,7 @@ button.finbtn.on{background:#e8590c!important;border-color:#ffb37a!important}
   <div class="neck"></div><div class="foot"></div>
   <div class="mat"><div class="persp"><div class="kb" id="kb"></div></div></div>
   <button id="gear" aria-label="Настройки">⚙</button>
+  <div id="gguide" aria-hidden="true"><div class="gi"><b>🌹</b><span></span></div><div class="gi"><b>🍩</b><span></span></div><div class="gi"><b>💎</b><span></span></div><div class="gi"><b>➕</b><span></span></div></div>
   <div id="hint">Нажмите на экран</div>
   <canvas id="fx" aria-hidden="true"></canvas>
 </div>
@@ -267,11 +276,12 @@ button.finbtn.on{background:#e8590c!important;border-color:#ffb37a!important}
   <input type="file" id="songfile" accept="audio/*" multiple hidden>
   <div id="mline"></div>
   <button class="finbtn wide">🏁 Скоро завершаем</button>
+  <button class="gdbtn wide">🎁 Подсказка о подарках: вкл</button>
   <div class="sec">🌐 Язык экрана</div>
   <div class="lchoice"><button data-l="ru">Русский</button><button data-l="en">English</button></div>
   <div id="st">Не подключено</div>
   <div id="log"></div>
-  <div class="help">Кнопка ⚙ скрывается, когда соединение открыто. Чтобы снова открыть это окно, нажмите 3 раза подряд в левый верхний угол экрана. Музыку можно менять и в эфире: нажмите 3 раза подряд в правый верхний угол — откроется маленькое окно без ключа. Ключ хранится только в этом браузере. Песни из «Мои песни» общие с Принтером. Кнопка «🏁 Скоро завершаем» (есть и в маленьком окне) показывает зрителям, что эфир заканчивается; после перезагрузки страницы она выключена. «🌐 Язык экрана» (есть и в маленьком окне) меняет только то, что видят зрители: заголовок, приветствия и фразы на листе; окна настроек остаются на русском. Выбор хранится в этом браузере.</div>
+  <div class="help">Кнопка ⚙ скрывается, когда соединение открыто. Чтобы снова открыть это окно, нажмите 3 раза подряд в левый верхний угол экрана. Музыку можно менять и в эфире: нажмите 3 раза подряд в правый верхний угол — откроется маленькое окно без ключа. Ключ хранится только в этом браузере. Песни из «Мои песни» общие с Принтером. Кнопка «🏁 Скоро завершаем» (есть и в маленьком окне) показывает зрителям, что эфир заканчивается; после перезагрузки страницы она выключена. «🌐 Язык экрана» (есть и в маленьком окне) меняет только то, что видят зрители: заголовок, приветствия и фразы на листе; окна настроек остаются на русском. Выбор хранится в этом браузере. «🎁 Подсказка» (есть и в маленьком окне): раз в минуту на 8 секунд над монитором появляется маленькая табличка — какой подарок что делает (без цен); её можно выключить, выбор тоже хранится в этом браузере.</div>
 </div>
 
 <div id="mini" role="dialog" aria-label="Музыка">
@@ -280,6 +290,7 @@ button.finbtn.on{background:#e8590c!important;border-color:#ffb37a!important}
   <div class="mmsg"></div>
   <div class="mrow"><button class="mnext">⏭ Следующая песня</button><button id="mx" aria-label="Закрыть">✕</button></div>
   <div class="mrow"><button class="finbtn">🏁 Скоро завершаем</button></div>
+  <div class="mrow"><button class="gdbtn">🎁 Подсказка: вкл</button></div>
   <div class="mrow lchoice"><button data-l="ru">🌐 RU</button><button data-l="en">🌐 EN</button></div>
 </div>
 
@@ -296,11 +307,11 @@ const SVGNS='http://www.w3.org/2000/svg';
 
 /* ---------- screen language: only what viewers see (the panels stay Russian); kept in this browser ---------- */
 const LANG={
-  ru:{title:'Имена.docx',page:'Страница 1 из 1',biu:['Ж','К','Ч'],hint:'Нажмите на экран',guest:'ГОСТЬ',hi:n=>'ПРИВЕТ, '+n+'!',
+  ru:{title:'Имена.docx',page:'Страница 1 из 1',biu:['Ж','К','Ч'],hint:'Нажмите на экран',guest:'ГОСТЬ',guide:['Имя на экране','Большое сердце','Золотая строка','Подписка — 💙'],hi:n=>'ПРИВЕТ, '+n+'!',
     idle:['ДОБРО ПОЖАЛОВАТЬ','ХОРОШЕГО НАСТРОЕНИЯ','СПАСИБО, ЧТО ВЫ ЗДЕСЬ','РАДЫ ВСЕМ ГОСТЯМ'],
     finIdle:['СКОРО ЗАВЕРШАЕМ','СПАСИБО, ЧТО БЫЛИ С НАМИ'],finLine:'СПАСИБО ВСЕМ! ДО ЗАВТРА',
     finOn:'🏁 Скоро завершаем — спасибо, что были с нами!',finDone:'🙏 Спасибо всем! До завтра 👋'},
-  en:{title:'Names.docx',page:'Page 1 of 1',biu:['B','I','U'],hint:'Tap the screen',guest:'GUEST',hi:n=>'HI, '+n+'!',
+  en:{title:'Names.docx',page:'Page 1 of 1',biu:['B','I','U'],hint:'Tap the screen',guest:'GUEST',guide:['Name on screen','Big heart','Golden line','Follow — 💙'],hi:n=>'HI, '+n+'!',
     idle:['WELCOME','HAVE A GREAT DAY','THANK YOU FOR BEING HERE','HAPPY TO SEE EVERYONE'],
     finIdle:['ENDING SOON','THANK YOU FOR WATCHING'],finLine:'THANK YOU ALL! SEE YOU TOMORROW',
     finOn:'🏁 Ending soon — thanks for being with us!',finDone:'🙏 Thank you all! See you tomorrow 👋'}};
@@ -584,10 +595,21 @@ document.querySelectorAll('.finbtn').forEach(b=>b.addEventListener('click',()=>s
 /* screen language: the title, page counter, B/I/U letters and hint change at once; lines already on the sheet stay, the next ones use the new language */
 function langUI(){const t=L();$('ttl').textContent=t.title;$('pg').textContent=t.page;document.querySelectorAll('.tool .biu').forEach((b,i)=>b.textContent=t.biu[i]);
   $('hint').textContent=t.hint;document.querySelectorAll('.lchoice button').forEach(b=>b.classList.toggle('on',b.dataset.l===lang));
-  try{document.documentElement.lang=lang;}catch(_){}finKey='';finUI();refitAll();}
+  try{document.documentElement.lang=lang;}catch(_){}finKey='';finUI();refitAll();
+  document.querySelectorAll('#gguide .gi span').forEach((e,i)=>e.textContent=t.guide[i]);}
 function setLang(v){lang=v==='en'?'en':'ru';try{localStorage.setItem('namesLang',lang);}catch(_){}langUI();}
 document.querySelectorAll('.lchoice button').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.l)));
 langUI();
+
+/* gift guide: hidden most of the time; first shown 10 s after the page loads, then every GUIDE_EVERY ms, each time for GUIDE_SHOW ms.
+   On/off is kept in this browser (localStorage 'namesGuide': '0' = off; anything else = on). The texts are in LANG (guide). */
+const GUIDE_EVERY=60000,GUIDE_SHOW=8000;
+let guideOn=(()=>{try{return localStorage.getItem('namesGuide')!=='0';}catch(_){return true;}})(),guideT=0;
+function guideShow(){if(!guideOn)return;const g=$('gguide');g.classList.add('show');clearTimeout(guideT);guideT=setTimeout(()=>g.classList.remove('show'),GUIDE_SHOW);}
+function guideUI(){document.querySelectorAll('.gdbtn').forEach(b=>{b.textContent=(b.classList.contains('wide')?'🎁 Подсказка о подарках: ':'🎁 Подсказка: ')+(guideOn?'вкл':'выкл');});
+  if(!guideOn){clearTimeout(guideT);$('gguide').classList.remove('show');}}
+document.querySelectorAll('.gdbtn').forEach(b=>b.addEventListener('click',()=>{guideOn=!guideOn;try{localStorage.setItem('namesGuide',guideOn?'1':'0');}catch(_){}guideUI();if(guideOn)guideShow();}));
+guideUI();setTimeout(()=>{guideShow();setInterval(guideShow,GUIDE_EVERY);},10000);
 
 /* one numbered line: a gift (red heart; gold line and gold heart for expensive ones) or a new follower (blue heart) */
 async function typeNumbered(it){
@@ -702,7 +724,7 @@ function ttHandle(m){
     /* a combo streak sends several updates, each with the running total: count only the new part; an old record (>8 s) is a new send */
     const now=Date.now(),rec=ttStreak[key],prev=rec&&now-rec.t<8000?rec.n:0,cnt=Math.max(1,+(d.repeatCount||d.comboCount||1)),add=Math.min(20,cnt-prev);
     if(d.repeatEnd===1||d.repeatEnd===true)delete ttStreak[key];else ttStreak[key]={n:Math.max(prev,cnt),t:now};
-    /* gift value, read like the printer's ttGiftOf: 100+ = gold line, 1000+ = gold line with confetti. The value is never shown on the stage. */
+    /* gift value, read like the printer's ttGiftOf: 30–99 (or a Donut) = bigger heart with mini hearts, 100+ = gold line, 1000+ = gold line with confetti. The value is never shown on the stage. */
     const g=d.gift||d.giftDetails||d.extendedGiftInfo||{},dia=+(g.diamondCount||g.diamond_count||d.diamondCount||0),nm=String(g.name||g.giftName||d.giftName||'').toLowerCase(),
       tier=dia>=1000?'mega':/rose|роза/.test(nm)?'normal':/donut|пончик/.test(nm)?'mid':dia>=100?'gold':dia>=30?'mid':'normal';   /* same order as the printer's ttGiftOf */
     if(!(add>0)){ttLog();return;}ttStats.gift+=add;ttLog('🎁 '+v.name+' ×'+add+' · 💎'+(dia>0?dia:'?'));
@@ -787,7 +809,7 @@ if(TEST){
   const mk=(t,f)=>{const e=document.createElement('button');e.textContent=t;e.addEventListener('click',f);box.appendChild(e);return e;};
   let demo=null;const demoB=mk('Демо',()=>{if(demo){clearTimeout(demo);demo=null;demoB.classList.remove('on');demoB.textContent='Демо';return;}
     demoB.classList.add('on');demoB.textContent='■ Демо';const step=()=>{const r=Math.random();r<.4?gift():r<.5?gift(30):r<.7?join():r<.85?follow():r<.95?gift(199):gift(1000);demo=setTimeout(step,rnd(700,3500));};step();});
-  mk('+ Подарок',()=>gift());mk('+ Зритель',join);mk('+ Подписка',follow);mk('+ Пончик',()=>gift(30));mk('+ Дорогой',()=>gift(199));mk('+ Лев',()=>gift(1000));
+  mk('+ Подарок',()=>gift());mk('+ Зритель',join);mk('+ Подписка',follow);mk('+ Пончик',()=>gift(30));mk('+ Дорогой',()=>gift(199));mk('+ Лев',()=>gift(1000));mk('🎁 Подсказка',guideShow);
 }
 })();
 </script>

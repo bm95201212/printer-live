@@ -123,6 +123,13 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:system-ui,-app
 #mm #mNow{font:600 1.45vh system-ui,sans-serif;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #credit{display:none;position:absolute;right:2.5%;top:12.6%;z-index:8;font:600 1.25vh system-ui,sans-serif;color:rgba(255,255,255,.8);background:rgba(0,0,0,.28);padding:.3vh .8vh;border-radius:1vh}
 #credit.on{display:block}
+
+/* sticker samples while the printer sleeps: the four looks, no gift names, no prices */
+#samples{position:absolute;left:50%;top:12.6%;width:60%;transform:translateX(-50%);display:flex;gap:3%;align-items:center;z-index:7;pointer-events:none;opacity:0;transition:opacity .25s}
+#samples.show{opacity:1;transition:opacity .8s}
+#samples .s{flex:1;min-width:0;background:#f4f1ea;padding:4%;border-radius:2px;box-shadow:0 .6vh 1vh rgba(0,0,0,.45)}
+#samples .s.gold{background:linear-gradient(135deg,#fff3c4,#f4d36b 45%,#fff6d6 55%,#e7b93e);box-shadow:0 0 1.4vh rgba(255,210,90,.6),0 .6vh 1vh rgba(0,0,0,.45)}
+#samples img{display:block;width:100%}
 </style>
 </head>
 <body>
@@ -146,6 +153,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:system-ui,-app
   <div id="welcome"></div>
   <div id="credit">♪ Music: Bensound.com</div>
   <div id="hint"></div>
+  <div id="samples" aria-hidden="true"></div>
   <div id="queue">⏳ <span id="qlab">Очередь</span>: <b id="qn">0</b><small id="qnow">&nbsp;</small></div>
 
   <div id="zones">
@@ -287,6 +295,23 @@ function drawPaper(av,name,tier,count){
   return c;}
 
 /* small wish slip for the chat command !тілек (no photo) */
+/* the four sticker looks (tier 0..3) with a neutral silhouette instead of a viewer photo; shown only while the printer sleeps */
+function silhouette(){const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,160);g.addColorStop(0,'#e9e6df');g.addColorStop(1,'#b9b4ab');x.fillStyle=g;x.fillRect(0,0,160,160);
+  x.fillStyle='#5b5650';x.beginPath();x.arc(80,62,30,0,7);x.fill();x.beginPath();x.ellipse(80,150,56,46,0,Math.PI,0);x.fill();return c;}
+function drawSample(tier){
+  const r=tier?70:88,S=2,outer=tier?r+12+14.5*S:r,top=tier===2?46:tier===3?44:0,W=Math.round(2*outer+(tier===3?34:24)),cx=W/2,cy=12+top+outer,H=Math.round(cy+outer+12);
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.fillStyle=PAPER;x.fillRect(0,0,W,H);
+  if(tier>=1)ring(x,cx,cy,r+12,tier>=2?16:12,S,3);
+  if(tier===3){x.save();x.strokeStyle=INK;x.lineWidth=2;x.beginPath();x.arc(cx,cy,outer+5,0,7);x.stroke();x.restore();}
+  const img=dither(silhouette(),112);x.save();x.beginPath();x.arc(cx,cy,r,0,7);x.clip();x.imageSmoothingEnabled=false;x.drawImage(img,cx-r,cy-r,r*2,r*2);x.restore();
+  x.lineWidth=6;x.strokeStyle=INK;x.beginPath();x.arc(cx,cy,r,0,7);x.stroke();
+  if(tier===2)shanyraq(x,cx,cy-outer-27,17);
+  if(tier===3)crown(x,cx,cy-outer-10,54);
+  return c;}
+(function buildSamples(){const box=$('samples');[0,1,2,3].forEach(t=>{const d=document.createElement('div');d.className='s'+(t>=2?' gold':'');
+  d.style.transform='rotate('+[-3,2,-2,3][t]+'deg)';const im=document.createElement('img');im.alt='';im.src=drawSample(t).toDataURL('image/png');d.appendChild(im);box.appendChild(d);});})();
+
 function drawSlip(name){
   const W=300,lg=nameLang(name),wi=Math.floor(Math.random()*WISH.kz.length);
   const L=[['800 15px "JetBrains Mono","Courier New",monospace','✍ '+(lg==='kz'?'ТІЛЕК':lg==='ru'?'ПОЖЕЛАНИЕ':'ПОЖЕЛАНИЕ · WISH'),30],['800 26px "JetBrains Mono","Courier New",monospace',name,40]];
@@ -347,7 +372,7 @@ let honorCoins=0;
 
 /* ---------- sleep / wake ---------- */
 let sleeping=false,idleTO=null;
-function setSleep(on){sleeping=on;$('prw').classList.toggle('sleep',on);$('led').classList.toggle('sleep',on);$('hint').classList.toggle('show',on);}
+function setSleep(on){sleeping=on;$('prw').classList.toggle('sleep',on);$('led').classList.toggle('sleep',on);$('hint').classList.toggle('show',on);$('samples').classList.toggle('show',on);}
 function idleLater(){clearTimeout(idleTO);idleTO=setTimeout(()=>{if(!busy&&!queue.length)setSleep(true);},6000);}
 async function wake(){if(!sleeping)return;setSleep(false);const b=$('bang');b.classList.remove('go');void b.offsetWidth;b.classList.add('go');pop();await sleep(550);}
 

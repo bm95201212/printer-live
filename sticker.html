@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Стикер-принтер LIVE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#000;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff}
+#wrap{height:100%;display:flex;align-items:center;justify-content:center}
+#stage{position:relative;width:min(100vw,calc(100dvh*.62));height:100dvh;overflow:hidden;background:#1d1416}
+/* scene = the background photo, always covering the stage; everything inside is placed in % of the photo */
+#scene{position:absolute;background:url(img/sticker/bg.jpg) center/100% 100% no-repeat}
+#prw{position:absolute;inset:0;pointer-events:none}
+#pshadow{position:absolute;left:30%;width:40%;top:58.2%;height:4.2%;border-radius:50%;background:radial-gradient(closest-side,rgba(40,20,45,.55),rgba(40,20,45,0));filter:blur(2px)}
+#printer{position:absolute;left:32%;width:36%;top:37.91%;filter:drop-shadow(0 .5vh .6vh rgba(50,20,40,.35))}
+#led{position:absolute;left:54.06%;top:51.92%;width:2.2%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;opacity:0;
+  background:radial-gradient(circle,#fff 0 18%,#ff4a3d 40%,rgba(255,40,30,.55) 62%,rgba(255,40,30,0) 72%);mix-blend-mode:screen}
+#prw.busy #led{opacity:1;animation:led .5s steps(2) infinite}
+#led.on{opacity:1}
+@keyframes led{50%{opacity:.45}}
+#feedw{position:absolute;left:53.62%;top:54.25%;width:19.2%;height:0;transform:translateX(-50%) rotate(-6.42deg);transform-origin:50% 0;z-index:3}
+#feed{position:absolute;left:0;top:0;width:100%;height:0;overflow:hidden}
+#feed canvas{position:absolute;left:0;bottom:0;width:100%;display:block}
+#feed.has{filter:drop-shadow(0 .6vh .7vh rgba(40,15,50,.35))}
+#cutline{position:absolute;left:0;top:0;width:100%;height:0;margin-top:10%}
+#sc{position:absolute;width:156.25%;aspect-ratio:629/396;margin-top:-47.31%;left:-110%;opacity:0;pointer-events:none;filter:drop-shadow(.4vh .9vh .7vh rgba(30,10,30,.45))}
+#sc img{position:absolute;display:block}
+#sco{left:0;top:0;width:100%}
+#scc{left:-1.03%;top:15.78%;width:100.8%;visibility:hidden}
+#sc.shut #sco{visibility:hidden}#sc.shut #scc{visibility:visible}
+/* garland pieces */
+.slot{position:absolute;width:12%;transform-origin:50% 0;z-index:2}
+.slot .pc{position:relative;background:#f4f1ea;padding:4%;border-radius:2px;box-shadow:0 .9vh 1.4vh rgba(0,0,0,.5);transform-origin:50% 0}
+.slot .pc img{display:block;width:100%}
+.slot .pin{position:absolute;left:50%;top:-9%;width:13%;height:26%;margin-left:-6.5%;background:linear-gradient(90deg,#a87945,#e3bd88 45%,#b8864f);border-radius:2px;z-index:2;box-shadow:0 .3vh .4vh rgba(0,0,0,.4)}
+.slot.gold .pc{background:linear-gradient(135deg,#fff3c4,#f4d36b 45%,#fff6d6 55%,#e7b93e);box-shadow:0 0 2vh rgba(255,210,90,.75),0 .9vh 1.4vh rgba(0,0,0,.5)}
+.slot.swing .pc{animation:swing 1.6s ease-out}
+@keyframes swing{0%{transform:rotate(14deg)}25%{transform:rotate(-9deg)}50%{transform:rotate(5deg)}75%{transform:rotate(-2deg)}100%{transform:rotate(0)}}
+/* overlay UI (screen-relative) */
+#thanks{position:absolute;left:50%;top:14.6%;transform:translate(-50%,0) scale(.9);opacity:0;transition:.3s;z-index:9;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;
+  background:rgba(30,18,40,.78);border:1.5px solid rgba(255,190,220,.55);padding:.9vh 2.2vh;border-radius:3vh;font-weight:800;font-size:2.1vh}
+#thanks.show{opacity:1;transform:translate(-50%,0) scale(1)}
+#thanks.gold{border-color:#ffd36a;color:#ffe9a8;box-shadow:0 0 2.4vh rgba(255,210,90,.6)}
+#queue{position:absolute;left:2%;top:57.5%;z-index:9;background:rgba(40,26,60,.72);border-radius:1.3vh;padding:.5vh .9vh;font-weight:800;font-size:1.3vh}
+#queue small{display:block;font-weight:600;font-size:1.1vh;opacity:.85;max-width:9vh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fly{position:absolute;z-index:12;box-shadow:0 1.4vh 2.6vh rgba(0,0,0,.5);border-radius:2px;transform-origin:0 0}
+.spark{position:absolute;width:1vh;height:1vh;border-radius:50%;z-index:13;pointer-events:none}
+#zones{display:none;position:absolute;inset:0;z-index:20;pointer-events:none}
+#zones.on{display:block}
+#zones div{position:absolute;background:rgba(255,40,90,.22);border:1.5px dashed rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;text-align:center;font-size:1.7vh;font-weight:800}
+#panel{position:absolute;left:0;right:0;bottom:0;z-index:30;background:rgba(14,10,24,.93);padding:1.1vh 1.1vh 1.7vh;display:flex;flex-direction:column;gap:.9vh;border-top:1px solid rgba(255,255,255,.12)}
+#panel.hide{display:none}
+#panel .r{display:flex;gap:.9vh}
+#panel button{flex:1;background:#2a2142;border:1px solid rgba(255,255,255,.14);color:#fff;font:700 1.75vh system-ui,sans-serif;padding:1.1vh .4vh;border-radius:1.3vh;cursor:pointer;white-space:nowrap}
+#panel button.on{background:#e8508a;border-color:#e8508a}
+#panel input[type=text]{flex:1.6;min-width:0;background:#221a36;border:1px solid rgba(255,255,255,.14);color:#fff;font:600 1.9vh system-ui,sans-serif;padding:1.1vh;border-radius:1.3vh}
+#panel .t{font-size:1.5vh;opacity:.7;text-align:center}
+#show{display:none;position:absolute;left:1.2vh;bottom:1.2vh;z-index:31;background:rgba(0,0,0,.35);border:0;color:#fff;font-size:2.2vh;width:5vh;height:5vh;border-radius:50%;opacity:.5}
+#panel.hide+#show{display:block}
+
+/* sleep / wake */
+#led.sleep{opacity:1;background:radial-gradient(circle,#e8f6ff 0 16%,#7cc8ff 38%,rgba(110,190,255,.4) 60%,rgba(110,190,255,0) 72%);animation:breath 3.2s ease-in-out infinite}
+@keyframes breath{0%,100%{opacity:.25}50%{opacity:.9}}
+.zz{position:absolute;font:800 2.6vh system-ui,sans-serif;color:#fff;opacity:0;text-shadow:0 .2vh .6vh rgba(0,0,0,.4);pointer-events:none;z-index:4}
+#prw.sleep~.zz{animation:zz 3.6s ease-out infinite}
+@keyframes zz{0%{opacity:0;transform:translate(0,0) scale(.6)}15%{opacity:.95}100%{opacity:0;transform:translate(3vh,-7vh) scale(1.25)}}
+#bang{position:absolute;left:50%;top:34%;transform:translate(-50%,0) scale(0);font:900 4.5vh system-ui,sans-serif;color:#ffd84a;text-shadow:0 .3vh .8vh rgba(0,0,0,.5);z-index:5;pointer-events:none}
+#bang.go{animation:bang .7s ease-out forwards}
+@keyframes bang{0%{transform:translate(-50%,0) scale(0);opacity:1}35%{transform:translate(-50%,-30%) scale(1.25)}80%{opacity:1}100%{transform:translate(-50%,-60%) scale(1);opacity:0}}
+/* gold pin for expensive gifts */
+.slot.gold .pin{background:linear-gradient(90deg,#b8862b,#ffe08a 45%,#c9952f)}
+/* hall of honour (1000+) */
+#honor{position:absolute;left:73%;width:17%;top:37%;z-index:2;display:none}
+#honor.on{display:block}
+#honor .fr{padding:7%;background:linear-gradient(135deg,#8a5a12,#f6d77a 30%,#b8862b 55%,#fff0b0 75%,#9a6a1a);border-radius:3px;box-shadow:0 0 2.6vh rgba(255,205,90,.55),0 1vh 1.6vh rgba(0,0,0,.55)}
+#honor .fr div{background:#f4f1ea;padding:5%}
+#honor img{display:block;width:100%}
+#honor .cup{position:absolute;left:50%;top:-2.6vh;transform:translateX(-50%);font-size:2.6vh;filter:drop-shadow(0 .3vh .4vh rgba(0,0,0,.5))}
+#honor.pop{animation:hpop .8s ease-out}
+@keyframes hpop{0%{transform:scale(1.25)}60%{transform:scale(.95)}100%{transform:scale(1)}}
+#flash{position:absolute;inset:0;z-index:11;pointer-events:none;opacity:0;background:radial-gradient(70% 55% at 50% 42%,rgba(255,222,120,.85),rgba(255,180,40,.35) 55%,rgba(120,60,0,0) 100%)}
+#flash.go{animation:flash 2.2s ease-out}
+@keyframes flash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+#combo{display:none}
+
+/* welcome line for viewers who join */
+#welcome{position:absolute;left:50%;top:20%;transform:translate(-50%,-.6vh);opacity:0;transition:.3s;z-index:8;white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis;
+  background:rgba(24,34,58,.72);border:1px solid rgba(150,200,255,.45);padding:.5vh 1.4vh;border-radius:2vh;font-weight:700;font-size:1.5vh}
+#welcome.show{opacity:1;transform:translate(-50%,0)}
+#led.peek{opacity:1!important;background:radial-gradient(circle,#fff 0 22%,#cfeaff 45%,rgba(200,230,255,0) 72%)!important;animation:none!important}
+/* followers / shares receipt on the wall */
+#rcpt{position:absolute;left:10.6%;width:17.6%;top:36.5%;z-index:2}
+#rcpt .clip{position:relative;margin:0 auto -0.5vh;width:46%;height:1.6vh;background:linear-gradient(#4a4a52,#26262c);border-radius:.4vh .4vh .2vh .2vh;z-index:2;box-shadow:0 .2vh .3vh rgba(0,0,0,.5)}
+#rcpt .tape{position:relative;background:#f4f1ea;color:#1c1c1c;font:700 1.05vh "JetBrains Mono","Courier New",monospace;padding:.9vh .55vh .4vh;box-shadow:0 .8vh 1.2vh rgba(0,0,0,.45);transform:rotate(-1.5deg);transform-origin:50% 0}
+#rcpt .tape::after{content:"";position:absolute;left:0;right:0;bottom:-.7vh;height:.75vh;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8' preserveAspectRatio='none'%3E%3Cpolygon points='0,0 10,0 5,8' fill='%23f4f1ea'/%3E%3C/svg%3E") 0 0/1vh 100% repeat-x}
+#rcpt .hd{text-align:center;font-weight:800;font-size:.98vh;padding-left:.2vh;padding-right:.2vh;overflow:visible!important;border-bottom:1px dashed #1c1c1c;padding-bottom:.4vh;margin-bottom:.3vh;white-space:nowrap;overflow:hidden}
+#rlines{max-height:13.5vh;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end}
+#rlines div{flex:0 0 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.55}
+#rlines div.new{animation:rnew 1.2s ease-out}
+@keyframes rnew{0%{background:#ffe08a}100%{background:transparent}}
+/* idle hint */
+#hint{position:absolute;left:41%;top:62%;transform:translateX(-50%);z-index:8;opacity:0;transition:opacity .5s;white-space:nowrap;max-width:76%;   /* stays left of TikTok's button column (right 20 %) */
+  overflow:hidden;text-overflow:ellipsis;
+  background:rgba(30,18,40,.66);padding:.6vh 1.4vh;border-radius:2vh;font-weight:700;font-size:1.55vh}
+#hint.show{opacity:1}
+
+/* readable name tags (the printed name is too small on the string) */
+.slot{z-index:4}
+.slot .nm,#honor .nm{position:absolute;left:50%;bottom:-1.1vh;transform:translateX(-50%);max-width:122%;z-index:3;background:rgba(20,12,28,.84);color:#fff;font:800 1.3vh system-ui,sans-serif;padding:.3vh .75vh;border-radius:1vh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 .2vh .5vh rgba(0,0,0,.4)}
+.slot.gold .nm{color:#ffe08a;border:1px solid rgba(255,210,90,.7)}
+#honor .nm{bottom:-1.4vh;max-width:100%;font-size:1.45vh;color:#ffe08a;border:1px solid rgba(255,210,90,.8)}
+
+/* music */
+#mm{display:none;flex-direction:column;gap:.8vh;background:#1c1530;border:1px solid rgba(255,255,255,.14);border-radius:1.3vh;padding:1vh}
+#mm.open{display:flex}
+#mm .vol{display:flex;align-items:center;gap:1vh;font:700 1.7vh system-ui,sans-serif}
+#mm .vol input{flex:1;accent-color:#e8508a;min-width:0}
+#mm .vol b{width:5vh;text-align:right;font-size:1.6vh}
+#mm label{font:600 1.55vh system-ui,sans-serif;display:flex;align-items:center;gap:.8vh;opacity:.9}
+#mm #mNow{font:600 1.45vh system-ui,sans-serif;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#credit{display:none;position:absolute;right:2.5%;top:12.6%;z-index:8;font:600 1.25vh system-ui,sans-serif;color:rgba(255,255,255,.8);background:rgba(0,0,0,.28);padding:.3vh .8vh;border-radius:1vh}
+#credit.on{display:block}
+
+/* gift guide (same idea as names.html #gguide): emoji + what the sticker looks like, no prices; shown 8 s once a minute while the printer is free */
+#gguide{position:absolute;z-index:9;left:7%;right:7%;top:12.8%;display:grid;grid-template-columns:1fr 1fr;gap:.7vh 2.2vh;padding:.9vh 1.8vh;border-radius:1.6vh;
+  background:rgba(14,10,8,.55);backdrop-filter:blur(.6vh);-webkit-backdrop-filter:blur(.6vh);box-shadow:0 .6vh 1.8vh rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.14);
+  color:#fff;font:700 1.6vh/1.15 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;opacity:0;transform:translateY(-.8vh);transition:opacity .6s,transform .6s;pointer-events:none}
+#gguide.show{opacity:.94;transform:none}
+#credit.on~#gguide{top:15.2%}   /* the music credit keeps its corner; the guide moves just below it */
+#gguide .gi{display:flex;align-items:center;gap:.9vh;white-space:nowrap;min-width:0}
+#gguide .gi b{font-size:2.4vh;line-height:1;font-weight:400}
+#gguide .gi span{overflow:hidden;text-overflow:ellipsis}
+
+/* the demo panel, its ⚙ and the zone marks exist only with ?test=1 */
+body:not(.test) #panel,body:not(.test) #show,body:not(.test) #zones{display:none!important}
+/* ⚙ settings (hidden while connected) and ⏭ skip (owner only: takes a sticker off the screen) */
+#gear{position:absolute;z-index:31;top:1.2vh;right:1.2vh;width:5vh;height:5vh;min-width:38px;min-height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.4);color:#fff;font-size:2.4vh;display:flex;align-items:center;justify-content:center;cursor:pointer}
+body.onair #gear{display:none}
+#skip{position:absolute;z-index:31;right:1.2vh;bottom:calc(var(--ph,0px) + 1.2vh);width:4.4vh;height:4.4vh;min-width:34px;min-height:34px;border-radius:50%;border:0;background:rgba(0,0,0,.35);color:#fff;font-size:1.9vh;opacity:.3;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation}
+/* ---------- settings panel (same pattern as names.html; never shown on air unless opened by hand) ---------- */
+#pan{display:none;position:fixed;z-index:50;top:calc(env(safe-area-inset-top,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 10px);
+  width:min(380px,calc(100vw - 20px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));
+  max-height:calc(100% - 20px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:auto;
+  background:rgba(22,25,36,.97);color:#eef1f8;border-radius:14px;padding:14px;font:500 14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.5);user-select:text;-webkit-user-select:text}
+#pan.open{display:block}
+#pan h4{display:flex;justify-content:space-between;align-items:center;gap:8px;font:700 15px system-ui,sans-serif;margin-bottom:10px}
+#px{white-space:nowrap;flex:0 0 auto}
+#pan label{display:block;font-size:12px;color:#a9b2c7;margin:8px 0 4px}
+#pan input{width:100%;font:500 15px system-ui,sans-serif;padding:9px 10px;border-radius:8px;border:1px solid #3a4157;background:#0f121b;color:#fff}
+#pan button{font:700 14px system-ui,sans-serif;padding:10px 12px;border-radius:8px;border:1px solid #3a4157;background:#262b3c;color:#fff;cursor:pointer}
+#pan .row2{display:flex;gap:8px;margin-top:10px}
+#pan .row2 button{flex:1}
+#pan .go{background:#1f8f4e;border-color:#1f8f4e}
+#pan .stop{background:#8f2a2a;border-color:#8f2a2a}
+#pan .wide{width:100%;margin-top:10px}
+#copy{background:#3a5bff!important;border-color:#3a5bff!important}
+#link{display:none;margin-top:8px;font-size:12px!important}
+#pan .note{font-size:12px;color:#ffb4a8;margin-top:6px}
+#st{margin-top:12px;padding:8px 10px;border-radius:8px;background:#0f121b;font-size:13px;white-space:pre-wrap}
+#log{margin-top:8px;padding:8px 10px;border-radius:8px;background:#0f121b;font:500 11.5px/1.45 ui-monospace,Menlo,Consolas,monospace;color:#b9c3d8;white-space:pre-wrap;word-break:break-word;min-height:40px}
+#pan .help{font-size:12px;color:#8f99ae;margin-top:8px;line-height:1.4}
+#pan .sec{margin-top:16px;padding-top:12px;border-top:1px solid #333a4f;font:700 15px system-ui,sans-serif}
+#pan input[type=range],#mini input[type=range]{flex:1;width:auto;min-width:0;height:44px;padding:0;border:0;background:none;accent-color:#e8508a}
+/* the music block of the mockup (#mm) inside the settings panel */
+#pan #mm{display:flex;gap:8px;margin-top:10px;padding:10px;border-radius:10px}
+#pan #mm .r{display:flex;flex-wrap:wrap;gap:8px}
+#pan #mm .r button{flex:1 1 auto;padding:10px 8px;white-space:nowrap}
+#pan #mm .r button.on{background:#e8508a;border-color:#e8508a}
+#pan #mm .vol{font:700 15px system-ui,sans-serif;gap:8px}
+#pan #mm .vol b{width:46px;font-size:14px}
+#pan #mm label{display:flex;font:600 13px system-ui,sans-serif;color:#eef1f8;margin:0;gap:8px}
+#pan #mm input[type=checkbox]{width:auto;padding:0;flex:0 0 auto}
+#pan #mm #mNow{font:600 13px system-ui,sans-serif}
+/* small panel for use on air: no username, key, link, log or file picker */
+#mini{display:none;position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 10px);
+  width:min(340px,calc(100vw - 20px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));
+  background:rgba(22,25,36,.96);color:#eef1f8;border-radius:16px;padding:12px;box-shadow:0 10px 40px rgba(0,0,0,.5);font:500 16px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation}
+#mini.open{display:block}
+#mini button{min-height:48px;min-width:48px;font:700 16px system-ui,sans-serif;padding:8px 10px;border-radius:10px;border:1px solid #3a4157;background:#262b3c;color:#fff;cursor:pointer}
+.mchoice{display:flex;gap:8px}
+.mchoice button{flex:1 1 auto;white-space:nowrap}
+.mchoice button.on{background:#e8508a!important;border-color:#e8508a!important}
+.mvolrow{display:flex;align-items:center;gap:10px;margin-top:8px}
+.mvolrow b{min-width:48px;text-align:right;font:700 16px system-ui,sans-serif}
+#mini .mrow{display:flex;gap:8px;margin-top:10px}
+#mini .mrow .gdbtn,#mini .lchoice button{flex:1}
+#pan .lchoice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.lchoice button.on{background:#3a5bff!important;border-color:#7d9bff!important}
+#mini .mmsg{margin-top:8px;font-size:15px;color:#ffd28a;text-align:center}
+#mini .mmsg:empty{display:none}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div id="scene">
+    <div id="garland"></div>
+    <div id="pshadow"></div>
+    <div id="honor"><div class="cup">🏆</div><div class="fr"><div><img id="honimg" alt=""></div></div><div class="nm" id="honnm"></div></div>
+    <div id="rcpt"><div class="clip"></div><div class="tape"><div class="hd" id="rhd"></div><div id="rlines"></div></div></div>
+    <div id="prw"><img id="printer" src="img/sticker/printer.webp" alt=""><div id="led"></div></div>
+    <div class="zz" style="left:60%;top:38.5%">z</div><div class="zz" style="left:62%;top:37%;animation-delay:1.2s!important">z</div><div class="zz" style="left:64%;top:35.5%;animation-delay:2.4s!important">Z</div>
+    <div id="bang">!</div>
+    <div id="feedw">
+      <div id="feed"></div>
+      <div id="cutline"><div id="sc"><img id="sco" src="img/sticker/sc_open.webp" alt=""><img id="scc" src="img/sticker/sc_closed.webp" alt=""></div></div>
+    </div>
+  </div>
+
+  <div id="flash"></div>
+  <div id="thanks"></div>
+  <div id="welcome"></div>
+  <div id="credit">♪ Music: Bensound.com</div>
+  <div id="hint"></div>
+  <div id="gguide" aria-hidden="true"><div class="gi"><b>🌹</b><span></span></div><div class="gi"><b>🍩</b><span></span></div><div class="gi"><b>💎</b><span></span></div><div class="gi"><b>🦁</b><span></span></div></div>
+  <div id="queue">⏳ <span id="qlab">Очередь</span>: <b id="qn">0</b><small id="qnow">&nbsp;</small></div>
+  <button id="gear" aria-label="Настройки">⚙</button>
+  <button id="skip" aria-label="Убрать стикер">⏭</button>
+
+  <div id="zones">
+    <div style="left:0;right:0;top:0;height:12%">Шапка TikTok</div>
+    <div style="left:0;bottom:0;width:72%;height:34%">Комментарии и подарки</div>
+    <div style="right:0;bottom:0;width:20%;height:46%">Кнопки</div>
+  </div>
+
+  <div id="panel">
+    <div class="t">Пульт макета (в эфире скрыт) · кнопки = тест подарков</div>
+    <div class="r"><button data-g="rose">🌹 1</button><button data-g="rose" data-n="10">🌹×10</button><button data-g="donut">🍩 30</button><button data-g="gem">💎 100</button><button data-g="lion">🦁 Лев</button></div>
+    <div class="r"><button data-ev="join">👋 Вход</button><button data-ev="follow">➕ Подписка</button><button data-ev="share">↗ Репост</button><button data-ev="wish">✍ !тілек</button></div>
+    <div class="r"><input type="text" id="who" maxlength="18" placeholder="Имя (пусто — случайное)"><button id="photo">📷 Фото</button></div>
+    <div class="r"><button id="auto">Авто ▶</button><button id="snd" class="on">🔈 Звук</button><button id="mus">🎵 Музыка</button></div>
+    <div class="r"><button id="lang">RU</button><button id="gdb" class="gdbtn">🎁 Подсказка</button><button id="zb">👁 Зоны</button><button id="hide">⛶ Эфир</button></div>
+  </div>
+  <button id="show" aria-label="Пульт">⚙</button>
+  <input type="file" id="pf" accept="image/*" hidden>
+  <input type="file" id="songs" accept="audio/*" multiple hidden>
+</div></div>
+
+<div id="pan" role="dialog" aria-label="Настройки">
+  <h4><span>⚙ Подключение к TikTok LIVE</span><button id="px">✕ Закрыть</button></h4>
+  <label for="tuser">Ваш TikTok (без @)</label><input id="tuser" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="например: my_account">
+  <label for="tkey">Euler Stream API key</label><input id="tkey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="вставьте ключ">
+  <div class="row2"><button class="go" id="go">▶ Подключить</button><button class="stop" id="stop">■ Отключить</button></div>
+  <button id="copy" class="wide">📋 Скопировать ссылку</button>
+  <input id="link" readonly>
+  <div class="note">Ссылка содержит ключ — не показывайте её в эфире</div>
+  <button class="sndb wide">🔈 Звуки принтера: вкл</button>
+  <div class="sec">🎵 Музыка</div>
+  <div id="mmHome">
+    <div id="mm">
+      <div class="r"><button id="mGen">🎵 Мелодия игры</button><button id="mOwn">📁 Мои песни</button><button id="mAdd">➕</button><button id="mOff">⏹</button></div>
+      <div class="vol">🔉 <input type="range" id="mVol" min="0" max="100" step="5" value="30"> <b id="mVolv">30%</b></div>
+      <label><input type="checkbox" id="mCred"> Подпись «Music: Bensound.com» (если песни с Bensound)</label>
+      <div id="mNow"></div>
+    </div>
+  </div>
+  <button class="gdbtn wide">🎁 Подсказка о подарках: вкл</button>
+  <div class="sec">🌐 Язык экрана</div>
+  <div class="lchoice"><button data-l="ru">Русский</button><button data-l="en">English</button></div>
+  <div id="st">Не подключено</div>
+  <div id="log"></div>
+  <div class="help">Кнопка ⚙ скрывается, когда соединение открыто. Чтобы снова открыть это окно, нажмите 3 раза подряд в левый верхний угол экрана. Музыку, язык и подсказку можно менять и в эфире: нажмите 3 раза подряд в правый верхний угол — откроется маленькое окно без ключа. Ключ хранится только в этом браузере (тот же, что у Принтера и Имён). Песни из «Мои песни» общие с Принтером и Именами. Кнопка ⏭ в правом нижнем углу убирает стикер, который печатается сейчас; если принтер свободен — снимает самый новый стикер с верёвки или из рамки почёта. «🌐 Язык экрана» меняет только то, что видят зрители; окна настроек остаются на русском. «🎁 Подсказка»: раз в минуту на 8 секунд появляется маленькая табличка — какой подарок какой стикер даёт (без цен); её можно выключить.</div>
+</div>
+
+<div id="mini" role="dialog" aria-label="Музыка">
+  <div class="mchoice"><button data-m="gen">🎵 Мелодия</button><button data-m="own">📁 Мои песни</button><button data-m="off">⏹</button></div>
+  <div class="mvolrow"><input type="range" class="mvol" min="0" max="100" step="5" value="30" aria-label="Громкость музыки"><b class="mvolv">30%</b></div>
+  <div class="mmsg"></div>
+  <div class="mrow"><button class="gdbtn">🎁 Подсказка: вкл</button><button id="mx" aria-label="Закрыть">✕</button></div>
+  <div class="mrow lchoice"><button data-l="ru">🌐 RU</button><button data-l="en">🌐 EN</button></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id), stage=$('stage'), scene=$('scene');
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+/* ?test=1 = demo panel, sample stickers, fake events; it never connects to TikTok (same convention as names.html) */
+const Q0=new URLSearchParams(location.search);
+const TEST=Q0.get('test')==='1';
+if(TEST)document.body.classList.add('test');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const NAMES=['Айгерім','Бекжан','Дана','Нұрлан','Аружан','Ержан','Мадина','Әсем','Дәулет','Ақбота','Санжар','Томирис','Asel_kz','Captain','Bakytzhan T.','beezy','zhaksonn','Катя','Дима','Олег','Maria','John_77','Светлана'];
+const EMO=['🐱','🐶','🦊','🐴','🌸','🌹','😎','👩','👨','🧕','🦁','🐼','🐰','🌻','👑','🐯'];
+/* test gifts (demo panel only); in the real game any TikTok gift is sorted by its coin price */
+const GIFTS={rose:{e:'🌹',cost:1},donut:{e:'🍩',cost:30},gem:{e:'💎',cost:100},lion:{e:'🦁',cost:29999}};
+/* 4 levels by total coins (gift price × combo count) */
+const tierOf=c=>c>=1000?3:c>=100?2:c>=10?1:0;
+const TIER=[{dur:2200,show:700},{dur:3000,show:1200},{dur:3600,show:1800},{dur:4200,show:2600}];
+const PAPER='#f4f1ea', INK='#1c1c1c';
+const IMG_AR=1438/2576;
+/* screen texts: RU / EN (owner button); the printed wish follows the viewer's name */
+let LANG='ru';try{if(localStorage.getItem('stLang')==='en')LANG='en';}catch(_){}
+const tr=(ru,en)=>LANG==='en'?en:ru;
+/* same wish in three languages (same index = same meaning) */
+const WISH={
+  kz:['Бақытты бол!','Жолың болсын!','Армандарың орындалсын!','Денің сау болсын!','Күнің нұрлы болсын!','Табысты бол!','Әрдайым күле жүр!','Сәттілік серік болсын!'],
+  ru:['Счастья тебе!','Удачи во всём!','Пусть мечты сбываются!','Здоровья и тепла!','Хорошего дня!','Успехов тебе!','Улыбайся чаще!','Пусть везёт!'],
+  en:['Be happy!','Good luck!','May your dreams come true!','Stay healthy!','Have a bright day!','Wishing you success!','Keep smiling!','Best of luck!']};
+const LEGEND={kz:'БАТЫР',ru:'ЛЕГЕНДА',en:'ЛЕГЕНДА · LEGEND'};
+/* Kazakh letters → Kazakh; other Cyrillic → Russian; Latin → Russian + English (owner's choice: Latin names can be Kazakh, Russian or foreign) */
+/* bad-word filter for nicknames (viewer chat text is never printed at all) */
+const BAD=['хуй','хуе','хуё','хуя','пизд','бля','ебан','ебат','ёбан','еблан','уеб','сука','суки','сучк','мудак','мудил','пидор','пидар','гандон','залуп','шлюх','дроч',
+  'сіктір','сікте','сігейін','сігем','қотақ','котак','қутақ','кутак','жәлеп','желеп','шешеңді','шешенди','әкеңді',
+  'fuck','fuk','shit','bitch','cunt','dick','pussy','whore','slut','nigg','porn','asshole','motherf'];
+function isBad(n){
+  const t=String(n).toLowerCase().replace(/[0]/g,'o').replace(/[1!|]/g,'i').replace(/3/g,'e').replace(/4|@/g,'a').replace(/\$/g,'s').replace(/[^a-zа-яёәіңғүұқөһ]/g,'');
+  const cyr=t.replace(/a/g,'а').replace(/o/g,'о').replace(/e/g,'е').replace(/c/g,'с').replace(/p/g,'р').replace(/x/g,'х').replace(/y/g,'у').replace(/k/g,'к').replace(/b/g,'б').replace(/h/g,'н');
+  return BAD.some(w=>t.includes(w)||cyr.includes(w));}
+/* the one name cleaner, used once where the event arrives: the character cleaning of names.html (letters, marks, digits, space, _ . - only; no upper-casing),
+   then the bad-word check (on the raw and on the cleaned name, so look-alikes like ! @ $ still count), then at most 16 characters */
+function cleanName(raw){
+  let s=String(raw==null?'':raw);
+  try{s=s.normalize('NFKC');}catch(_){}
+  const full=s;
+  s=s.replace(/[\uFE00-\uFE0F\u20E3\u200D]/g,'').replace(/[\u{E0100}-\u{E01EF}]/gu,'');   /* emoji joiners / variation selectors */
+  s=s.replace(/[^\p{L}\p{M}\p{Nd} _.\-]/gu,' ').replace(/\s+/g,' ').trim();
+  if(!/[\p{L}\p{Nd}]/u.test(s)||isBad(full)||isBad(s))return tr('Гость','Guest');
+  const a=Array.from(s);
+  if(a.length>16)s=a.slice(0,15).join('').trim()+'…';
+  return s;}
+const nameLang=n=>/[әіңғүұқөһӘІҢҒҮҰҚӨҺ]/.test(n)?'kz':/[А-Яа-яЁё]/.test(n)?'ru':'en';
+
+function fit(){const W=stage.clientWidth,H=stage.clientHeight;let w,h;
+  if(W/H>IMG_AR){w=W;h=W/IMG_AR;}else{h=H;w=H*IMG_AR;}
+  Object.assign(scene.style,{width:w+'px',height:h+'px',left:(W-w)/2+'px',top:(H-h)/2+'px'});}
+new ResizeObserver(()=>{fit();try{fitHint();}catch(_){}}).observe(stage);fit();
+
+/* ---------- avatars + thermal dithering ---------- */
+/* fallback when a viewer has no picture or it cannot be loaded or read: a coloured gradient with the first letter of the name */
+function letterAvatar(name){
+  const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d');
+  let h=0;for(const ch of name)h=(h*31+ch.codePointAt(0))%360;
+  const g=x.createRadialGradient(60,50,10,80,80,110);g.addColorStop(0,'hsl('+h+',60%,50%)');g.addColorStop(1,'hsl('+((h+40)%360)+',55%,22%)');
+  x.fillStyle=g;x.fillRect(0,0,160,160);
+  const m=name.match(/[\p{L}\p{Nd}]/u);
+  x.font='800 104px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';
+  const ch=(m?m[0]:'?').toUpperCase();x.lineWidth=9;x.strokeStyle='#161616';x.strokeText(ch,80,88);x.fillStyle='#fff';x.fillText(ch,80,88);return c;}
+/* profile picture: loaded like index.html ttAvatar (anonymous CORS, 2.5 s limit); resolves with the image, or null */
+function loadPic(url){return new Promise(res=>{if(!url){res(null);return;}
+  const im=new Image();im.crossOrigin='anonymous';let done=false;const fin=ok=>{if(done)return;done=true;res(ok?im:null);};
+  im.onload=()=>fin(im.naturalWidth>0);im.onerror=()=>fin(false);setTimeout(()=>fin(false),2500);im.src=url;});}
+/* emoji avatar: only for the two sample stickers of the test page */
+function demoAvatar(){
+  const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d');
+  const h=Math.floor(Math.random()*360);
+  const g=x.createRadialGradient(60,50,10,80,80,110);g.addColorStop(0,'hsl('+h+',70%,78%)');g.addColorStop(1,'hsl('+((h+40)%360)+',55%,32%)');
+  x.fillStyle=g;x.fillRect(0,0,160,160);
+  x.font='108px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';x.textAlign='center';x.textBaseline='middle';
+  x.fillText(pick(EMO),80,92);return c;}
+function dither(src,N){
+  const c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d');
+  const sw=src.width||src.naturalWidth,sh=src.height||src.naturalHeight,s=Math.min(sw,sh);
+  x.fillStyle='#fff';x.fillRect(0,0,N,N);x.drawImage(src,(sw-s)/2,(sh-s)/2,s,s,0,0,N,N);
+  const d=x.getImageData(0,0,N,N),p=d.data,g=new Float32Array(N*N);
+  for(let i=0;i<N*N;i++){const v=.299*p[i*4]+.587*p[i*4+1]+.114*p[i*4+2];g[i]=(v-128)*1.35+138;}
+  const add=(xx,yy,e)=>{if(xx>=0&&xx<N&&yy<N)g[yy*N+xx]+=e;};
+  for(let y=0;y<N;y++)for(let xx=0;xx<N;xx++){const i=y*N+xx,o=g[i],n=o<128?0:255,e=(o-n)/8;g[i]=n;
+    add(xx+1,y,e);add(xx+2,y,e);add(xx-1,y+1,e);add(xx,y+1,e);add(xx+1,y+1,e);add(xx,y+2,e);}
+  for(let i=0;i<N*N;i++){const col=g[i]<128?[28,28,28]:[244,241,234];p[i*4]=col[0];p[i*4+1]=col[1];p[i*4+2]=col[2];p[i*4+3]=255;}
+  x.putImageData(d,0,0);return c;}
+
+/* ---------- printed decorations ---------- */
+function horn(x,s){x.beginPath();x.moveTo(0,3*s);x.lineTo(0,-4*s);   /* ram-horn (қошқар мүйіз) motif, pointing outward */
+  for(const sd of [-1,1]){x.moveTo(0,-4*s);const cx=sd*5*s,cy=-9*s;
+    for(let t=0;t<=1.0001;t+=.02){const th=Math.PI+t*2.3*Math.PI,r=5.5*s*(1-.72*t);
+      x.lineTo(sd>0?cx+Math.cos(th)*r:cx-Math.cos(th)*r,cy-Math.sin(th)*r);}}
+  x.stroke();}
+function ring(x,cx,cy,R,n,s,lw){x.save();x.strokeStyle=INK;x.lineWidth=lw;x.lineCap='round';x.lineJoin='round';
+  for(let i=0;i<n;i++){const a=i/n*Math.PI*2;x.save();x.translate(cx+Math.sin(a)*R,cy-Math.cos(a)*R);x.rotate(a);horn(x,s);x.restore();}
+  x.restore();}
+function shanyraq(x,cx,cy,R){x.save();x.strokeStyle=INK;x.lineWidth=3.5;x.beginPath();x.arc(cx,cy,R,0,7);x.stroke();
+  x.save();x.beginPath();x.arc(cx,cy,R-1,0,7);x.clip();x.lineWidth=3;
+  for(const k of [-1,1])for(let j=-1;j<=1;j++){x.beginPath();x.arc(cx+k*R*1.25,cy+j*R*.42,R*1.15,0,7);x.stroke();}
+  x.restore();
+  for(let i=0;i<24;i++){const a=i/24*Math.PI*2;x.beginPath();x.moveTo(cx+Math.cos(a)*(R+3),cy+Math.sin(a)*(R+3));x.lineTo(cx+Math.cos(a)*(R+8),cy+Math.sin(a)*(R+8));x.stroke();}
+  x.restore();}
+function crown(x,cx,cy,w){x.save();x.fillStyle=INK;x.beginPath();
+  x.moveTo(cx-w/2,cy);x.lineTo(cx-w/2,cy-w*.42);x.lineTo(cx-w/4,cy-w*.18);x.lineTo(cx,cy-w*.55);x.lineTo(cx+w/4,cy-w*.18);x.lineTo(cx+w/2,cy-w*.42);x.lineTo(cx+w/2,cy);x.closePath();x.fill();
+  [-.5,0,.5].forEach(k=>{x.beginPath();x.arc(cx+k*w,cy-(k?w*.46:w*.6),w*.07,0,7);x.fill();});x.restore();}
+function comboBadge(x,W,n){x.save();x.translate(W-40,40);x.rotate(-.22);x.fillStyle=INK;x.beginPath();x.arc(0,0,29,0,7);x.fill();
+  x.strokeStyle=PAPER;x.lineWidth=2;x.beginPath();x.arc(0,0,24,0,7);x.stroke();
+  x.fillStyle=PAPER;x.textAlign='center';x.textBaseline='middle';x.font='800 '+(n>=10000?11:n>=1000?13:n>=100?16:20)+'px "JetBrains Mono","Courier New",monospace';x.fillText('×'+n,0,1);x.restore();}
+
+/* one printed sticker: level, wish in the viewer's language, combo stamp */
+function drawPaper(av,name,tier,count){
+  const W=300,lg=nameLang(name),r=tier?70:88,S=2,outer=tier?r+12+14.5*S:r;
+  const cy=[106,12+outer,10+46+outer,10+38+outer+6][tier];
+  const lines=[];
+  if(tier===3)lines.push(['800 19px "JetBrains Mono","Courier New",monospace','★ '+LEGEND[lg]+' ★',28]);
+  lines.push(['800 28px "JetBrains Mono","Courier New",monospace',name,tier===3?28:(tier?30:38)]);
+  const wi=Math.floor(Math.random()*WISH.kz.length);
+  if(lg==='en'){lines.push(['italic 700 18px Georgia,"Noto Serif",serif','«'+WISH.ru[wi]+'»',26]);lines.push(['italic 600 14px Georgia,"Noto Serif",serif',WISH.en[wi],20]);}
+  else lines.push(['italic 700 18px Georgia,"Noto Serif",serif','«'+WISH[lg][wi]+'»',26]);
+  const d=new Date(),t=String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  lines.push(['700 13px "JetBrains Mono","Courier New",monospace',t,20]);
+  let yy=cy+outer;const ys=lines.map(l=>(yy+=l[2],yy));const H=Math.round(yy+20);
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  x.fillStyle=PAPER;x.fillRect(0,0,W,H);const cx=W/2;
+  if(tier>=1)ring(x,cx,cy,r+12,tier>=2?16:12,S,3);
+  if(tier===3){x.save();x.strokeStyle=INK;x.lineWidth=2;x.beginPath();x.arc(cx,cy,outer+5,0,7);x.stroke();x.restore();}
+  const img=dither(av,112);
+  x.save();x.beginPath();x.arc(cx,cy,r,0,7);x.clip();x.imageSmoothingEnabled=false;x.drawImage(img,cx-r,cy-r,r*2,r*2);x.restore();
+  x.lineWidth=6;x.strokeStyle=INK;x.beginPath();x.arc(cx,cy,r,0,7);x.stroke();
+  if(tier===2)shanyraq(x,cx,cy-outer-27,17);
+  if(tier===3)crown(x,cx,cy-outer-10,54);
+  x.fillStyle=INK;x.textAlign='center';
+  lines.forEach((l,i)=>{x.font=l[0];const txt=l[1];
+    if(txt===name){let fs=28;while(x.measureText(txt).width>W-24&&fs>15){fs-=2;x.font='800 '+fs+'px "JetBrains Mono","Courier New",monospace';}}
+    if(l[0].startsWith('italic')){let fs=parseInt(l[0].split(' ')[2]),wt=l[0].split(' ')[1];while(x.measureText(txt).width>W-16&&fs>10){fs-=1;x.font='italic '+wt+' '+fs+'px Georgia,"Noto Serif",serif';}}
+    x.fillText(txt,cx,ys[i]);});
+  if(count>1)comboBadge(x,W,count);
+  x.globalAlpha=.025;for(let i=0;i<3;i++){x.fillStyle='#000';x.fillRect(Math.random()*W,0,1,H);}x.globalAlpha=1;
+  c.meta={lang:lg,wish:lg==='en'?[WISH.ru[wi],WISH.en[wi]]:[WISH[lg][wi]],stamp:count>1?'×'+count:''};
+  return c;}
+
+/* small wish slip for the chat command !тілек (no photo) */
+function drawSlip(name){
+  const W=300,lg=nameLang(name),wi=Math.floor(Math.random()*WISH.kz.length);
+  const L=[['800 15px "JetBrains Mono","Courier New",monospace','✍ '+(lg==='kz'?'ТІЛЕК':lg==='ru'?'ПОЖЕЛАНИЕ':'ПОЖЕЛАНИЕ · WISH'),30],['800 26px "JetBrains Mono","Courier New",monospace',name,40]];
+  if(lg==='en'){L.push(['italic 700 19px Georgia,"Noto Serif",serif','«'+WISH.ru[wi]+'»',34]);L.push(['italic 600 15px Georgia,"Noto Serif",serif',WISH.en[wi],22]);}
+  else L.push(['italic 700 19px Georgia,"Noto Serif",serif','«'+WISH[lg][wi]+'»',34]);
+  const d=new Date();L.push(['700 12px "JetBrains Mono","Courier New",monospace',String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'),24]);
+  let y=0;const ys=L.map(l=>(y+=l[2],y));const H=y+22;
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  x.fillStyle=PAPER;x.fillRect(0,0,W,H);x.fillStyle=INK;x.textAlign='center';
+  L.forEach((l,i)=>{x.font=l[0];const sz=parseInt(l[0].match(/(\d+)px/)[1]);let fs=sz;
+    while(x.measureText(l[1]).width>W-20&&fs>10){fs--;x.font=l[0].replace(sz+'px',fs+'px');}x.fillText(l[1],W/2,ys[i]);});
+  x.strokeStyle=INK;x.setLineDash([4,4]);x.lineWidth=1.5;x.beginPath();x.moveTo(14,ys[0]+9);x.lineTo(W-14,ys[0]+9);x.stroke();
+  c.meta={lang:lg,wish:lg==='en'?[WISH.ru[wi],WISH.en[wi]]:[WISH[lg][wi]],text:L.map(l=>l[1])};
+  return c;}
+
+/* ---------- sound ---------- */
+let AC=null,sound=true,buzzOff=null;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(_){}}if(AC&&AC.state==='suspended')AC.resume();return AC;}
+/* real recordings from Pixabay (uploader: freesound_community; Pixabay Content License), cut for this game: a seamless thermal-printer loop and three scissor snips */
+const SFX_SRC={pr:'snd/sticker/printer_loop.wav',s:['snd/sticker/snip0.wav','snd/sticker/snip1.wav','snd/sticker/snip2.wav']};const SFX={pr:null,s:[]};let sfxLoading=false;
+function sfxLoad(){const a=AC;if(!a||sfxLoading)return;sfxLoading=true;
+  const dec=u=>fetch(u).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();}).then(b=>new Promise((res,rej)=>a.decodeAudioData(b,res,rej)));
+  dec(SFX_SRC.pr).then(b=>SFX.pr=b).catch(()=>{});SFX_SRC.s.forEach(u=>dec(u).then(b=>SFX.s.push(b)).catch(()=>{}));}
+function buzz(ms){const a=ac();if(!a||!sound)return;sfxLoad();
+  if(SFX.pr){const t=a.currentTime,src=a.createBufferSource(),g=a.createGain();src.buffer=SFX.pr;src.loop=true;src.playbackRate.value=.97+Math.random()*.06;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.55,t+.03);g.gain.setValueAtTime(.55,t+ms/1000-.08);g.gain.linearRampToValueAtTime(0,t+ms/1000);
+    src.connect(g);g.connect(a.destination);src.start(t,Math.random()*SFX.pr.duration);src.stop(t+ms/1000+.05);
+    buzzOff=()=>{try{g.gain.cancelScheduledValues(0);g.gain.setValueAtTime(0,a.currentTime);src.stop();}catch(_){}};return;}
+  const t=a.currentTime;
+  const o=a.createOscillator();o.type='sawtooth';o.frequency.value=150;
+  const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=1400;f.Q.value=1.2;
+  const g=a.createGain();g.gain.value=0;
+  const l=a.createOscillator();l.type='square';l.frequency.value=24;const lg=a.createGain();lg.gain.value=.05;
+  l.connect(lg);lg.connect(g.gain);o.connect(f);f.connect(g);g.connect(a.destination);
+  g.gain.setValueAtTime(.05,t);g.gain.setValueAtTime(.05,t+ms/1000-.05);g.gain.linearRampToValueAtTime(0,t+ms/1000);
+  o.start(t);l.start(t);o.stop(t+ms/1000+.05);l.stop(t+ms/1000+.05);
+  buzzOff=()=>{try{o.stop();l.stop();}catch(_){}};}
+function snip(){const a=ac();if(!a||!sound)return;sfxLoad();
+  if(SFX.s.length){const src=a.createBufferSource(),g=a.createGain();src.buffer=pick(SFX.s);src.playbackRate.value=.94+Math.random()*.14;g.gain.value=.6;src.connect(g);g.connect(a.destination);src.start();return;}
+  const t=a.currentTime,n=a.sampleRate*.05,b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3);
+  const s=a.createBufferSource();s.buffer=b;const f=a.createBiquadFilter();f.type='highpass';f.frequency.value=2500;const g=a.createGain();g.gain.value=.35;
+  s.connect(f);f.connect(g);g.connect(a.destination);s.start(t);}
+function notes(list,type,vol){const a=ac();if(!a||!sound)return;const t=a.currentTime;
+  list.forEach(([fq,at,len])=>{const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=fq;
+    g.gain.setValueAtTime(0,t+at);g.gain.linearRampToValueAtTime(vol,t+at+.02);g.gain.exponentialRampToValueAtTime(.001,t+at+len);o.connect(g);g.connect(a.destination);o.start(t+at);o.stop(t+at+len+.05);});}
+const chime=()=>notes([[784,0,.6],[988,.09,.6],[1319,.18,.8]],'sine',.12);
+const fanfare=()=>{notes([[523,0,.35],[659,.14,.35],[784,.28,.35],[1047,.44,1.1],[784,.44,1.1]],'triangle',.13);notes([[131,.44,1.2]],'sine',.18);};
+const pop=()=>notes([[660,0,.12],[990,.05,.15]],'sine',.07);
+const tick=()=>notes([[1800,0,.05],[1500,.06,.05]],'square',.025);
+
+/* ---------- garland + hall of honour ---------- */
+const SLOTS=[{x:50,y:28.41,r:-2},{x:35.47,y:27.48,r:-6},{x:64.53,y:27.91,r:5},{x:20.86,y:25.12,r:4},{x:79.14,y:25.99,r:-4}];
+const items=[];const SL=[];
+function renderGarland(hideFirst){const gEl=$('garland');gEl.innerHTML='';SL.length=0;
+  items.forEach((it,i)=>{const p=SLOTS[i],s=document.createElement('div');s.className='slot'+(it.gold?' gold':'');
+    s.style.left=(p.x-6)+'%';s.style.top=(p.y-.5)+'%';s.style.transform='rotate('+p.r+'deg)';
+    s.innerHTML='<div class="pin"></div><div class="pc"><img alt=""></div><div class="nm"></div>';s.querySelector('img').src=it.url;const nm=s.querySelector('.nm');nm.textContent=it.name;if(it.name.length>9)nm.style.fontSize=it.name.length>13?'1.02vh':'1.15vh';
+    if(i===0&&hideFirst)s.style.visibility='hidden';gEl.appendChild(s);SL.push(s);});}
+let honorCoins=0,honName='',honSeq=0,seqN=0;   /* seq = order of arrival on the string / in the frame (for ⏭) */
+
+/* ---------- sleep / wake ---------- */
+let sleeping=false,idleTO=null;
+function setSleep(on){sleeping=on;$('prw').classList.toggle('sleep',on);$('led').classList.toggle('sleep',on);$('hint').classList.toggle('show',on);}
+function idleLater(){clearTimeout(idleTO);idleTO=setTimeout(()=>{if(!busy&&!queue.length)setSleep(true);},6000);}
+async function wake(){if(!sleeping)return;setSleep(false);const b=$('bang');b.classList.remove('go');void b.offsetWidth;b.classList.add('go');pop();await sleep(550);}
+
+/* the printed text uses a web font with Kazakh letters; canvas must wait until it has loaded */
+const fontsReady=Promise.race([Promise.all(['800 28px "JetBrains Mono"','700 13px "JetBrains Mono"'].map(f=>document.fonts.load(f,'Әә Ққ Ңң Abc'))).catch(()=>{}),new Promise(r=>setTimeout(r,2000))]);
+/* ---------- queue + printing ---------- */
+const queue=[];let busy=false,nowName='',cur=null,last=null;const hist=[];
+function updQ(){$('qlab').textContent=tr('Очередь','Queue');$('qn').textContent=queue.length;$('qnow').textContent=nowName?('🖨 '+nowName):' ';}
+let thTO;
+const TEMO=['🎁','🎁','💎','👑'];   /* thanks line: an emoji by level, never the gift itself or its price */
+function thanks(j){const t=$('thanks');
+  t.textContent=(j.tier===3?'🏆 ':'')+tr('Спасибо, ','Thank you, ')+j.name+'! '+TEMO[j.tier]+(j.count>1?' ×'+j.count:'');
+  t.className='show'+(j.tier>=2?' gold':'');clearTimeout(thTO);thTO=setTimeout(()=>t.className=t.className.replace('show',''),3600);}
+function sparks(x0,y0,n,cols){const r=stage.getBoundingClientRect();for(let i=0;i<n;i++){const s=document.createElement('div');s.className='spark';s.style.background=pick(cols);
+  s.style.left=x0+'px';s.style.top=y0+'px';stage.appendChild(s);const a=Math.random()*Math.PI*2,d=(.15+Math.random()*.4)*r.width;
+  s.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:'translate('+Math.cos(a)*d+'px,'+(Math.sin(a)*d+r.width*.15)+'px) scale(.3)',opacity:0}],{duration:900+Math.random()*900,easing:'cubic-bezier(.2,.7,.3,1)'}).onfinish=()=>s.remove();}}
+/* order: 1000+ first, then 100+, then the rest in arrival order, then !тілек slips. A job on the printer is never interrupted (only by ⏭). */
+const PRI=j=>j.slip?3:j.tier===3?0:j.tier===2?1:2;
+const giftsWaiting=()=>queue.filter(q=>!q.slip).length;
+const Q_MAX0=40,Q_MAX1=200,Q_FAST=5;   /* waiting limits: cheapest level / all higher levels; fast mode while more than Q_FAST gifts wait */
+function enqueue(job){const p=PRI(job),k=queue.findIndex(q=>PRI(q)>p);if(k<0)queue.push(job);else queue.splice(k,0,job);updQ();if(!busy)run();}
+function addGift(v,dia,count,av){const total=dia*count,tier=tierOf(total);
+  if(tier===0?queue.filter(q=>!q.slip&&q.tier===0).length>=Q_MAX0:queue.filter(q=>!q.slip&&q.tier>=1).length>=Q_MAX1){ttStats.drop++;ttLog('🎁 '+v.name+' — очередь полна, подарок пропущен');return;}
+  ttStats.gift+=count;ttLog('🎁 '+v.name+' ×'+count+' · 💎'+dia+' · уровень '+tier);
+  enqueue({name:v.name,count,total,tier,av});}
+/* every job has a small controller: ⏭ rejects whatever the job is waiting for, so it stops at once */
+const SKIP={};
+function jobCtl(j){const c={j,dead:false,placed:false,fin:false,undo:null,fly:null,sw:0};
+  c.gone=new Promise((_,rej)=>{c.kill=()=>{if(!c.dead){c.dead=true;rej(SKIP);}};});c.gone.catch(()=>{});
+  c.w=p=>Promise.race([p,c.gone]).then(v=>{if(c.dead)throw SKIP;return v;});return c;}
+function clearPrint(c){clearInterval(c.sw);if(buzzOff){buzzOff();buzzOff=null;}
+  const feed=$('feed'),sc=$('sc');feed.classList.remove('has');feed.innerHTML='';feed.style.height='0px';$('prw').classList.remove('busy');
+  try{sc.getAnimations().forEach(a=>a.cancel());}catch(_){}sc.style.opacity='0';sc.classList.remove('shut');
+  if(c.fly){c.fly.remove();c.fly=null;}
+  $('flash').classList.remove('go');stage.querySelectorAll('.spark').forEach(e=>e.remove());
+  clearTimeout(thTO);$('thanks').className='';
+  if(c.undo){const u=c.undo;c.undo=null;u();}}
+function done1(rec){last=rec;hist.push(rec);if(hist.length>60)hist.shift();}
+async function run(){busy=true;clearTimeout(idleTO);
+  while(queue.length){const j=queue.shift(),c=jobCtl(j);cur=c;nowName=j.name;updQ();
+    try{await (j.slip?printSlip(j,c):printJob(j,c));}
+    catch(e){if(e!==SKIP){clearPrint(c);ttLog('ошибка печати: '+(e&&e.message));}}   /* one bad job never stops the queue */
+    cur=null;}
+  busy=false;nowName='';updQ();idleLater();}
+function animH(el,H,dur,c){return new Promise(res=>{const t0=performance.now();
+  (function f(now){if(c&&c.dead){res();return;}const k=Math.min(1,(now-t0)/dur);el.style.height=(Math.floor(k*H/3)*3)+'px';
+    if(k<1)requestAnimationFrame(f);else{el.style.height=H+'px';res();}})(t0);});}
+
+async function printJob(j,c){
+  guideHide();await c.w(fontsReady);await c.w(wake());
+  const im=await c.w(j.av);   /* the picture started loading when the gift arrived (2.5 s limit), so it never holds the queue longer than that */
+  const fast=j.tier<2&&giftsWaiting()>Q_FAST;   /* long queue: cheap stickers print and show faster; 100+ are never shortened */
+  const T0=TIER[j.tier],dur=fast?T0.dur*.6:T0.dur,show=fast?T0.show*.5:T0.show;
+  let paper=null,fb=!im;
+  if(im){try{paper=drawPaper(im,j.name,j.tier,j.count);}catch(_){fb=true;}}   /* a picture the canvas is not allowed to read */
+  if(fb)paper=drawPaper(letterAvatar(j.name),j.name,j.tier,j.count);
+  const feed=$('feed'),prw=$('prw'),t0=performance.now();
+  feed.innerHTML='';feed.style.height='0px';feed.appendChild(paper);feed.classList.add('has');
+  const H=Math.round(feed.clientWidth*paper.height/paper.width);
+  thanks(j);
+  prw.classList.add('busy');buzz(dur);
+  await c.w(animH(feed,H,dur,c));
+  prw.classList.remove('busy');
+  await c.w(sleep(350));
+  const sc=$('sc');sc.style.opacity='1';
+  let shut=false;c.sw=setInterval(()=>{shut=!shut;sc.classList.toggle('shut',shut);if(shut)snip();},130);
+  await c.w(sc.animate([{left:'-118%',opacity:0},{offset:.12,opacity:1},{left:'-2%',opacity:1}],{duration:1150,easing:'ease-in-out',fill:'forwards'}).finished);
+  clearInterval(c.sw);sc.classList.add('shut');
+  await c.w(sleep(120));
+  sc.animate([{left:'-2%',opacity:1},{left:'14%',opacity:0}],{duration:300,fill:'forwards'}).finished.then(()=>sc.classList.remove('shut'),()=>{});
+  /* shown to the camera (longer for bigger gifts), then flies to the string or to the hall of honour */
+  const sr=stage.getBoundingClientRect(),cr=paper.getBoundingClientRect();
+  const ar=paper.height/paper.width,w0=feed.clientWidth,h0=w0*ar,cx0=cr.left-sr.left+cr.width/2,cy0=cr.top-sr.top+cr.height/2;
+  const url=paper.toDataURL('image/png');
+  const fly=document.createElement('img');fly.src=url;fly.className='fly';c.fly=fly;
+  Object.assign(fly.style,{left:(cx0-w0/2)+'px',top:(cy0-h0/2)+'px',width:w0+'px',transformOrigin:'50% 50%'});
+  if(j.tier>=2)fly.style.outline='.5vh solid #f0c75a';
+  stage.appendChild(fly);feed.classList.remove('has');feed.innerHTML='';feed.style.height='0px';
+  const TT=(dx,dy,r,s)=>'translate('+dx+'px,'+dy+'px) rotate('+r+'deg) scale('+s+')';
+  const bigW=[.46,.52,.58,.64][j.tier],big=Math.min(sr.width*bigW,sr.height*.44/ar),s1=big/w0,dx1=sr.width/2-cx0,dy1=sr.height*.4-cy0;
+  if(j.tier===3){const f=$('flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');fanfare();}
+  await c.w(fly.animate([{transform:TT(0,0,-6.42,1)},{transform:TT(dx1,dy1,2,s1)}],{duration:650,easing:'cubic-bezier(.3,.8,.3,1)',fill:'forwards'}).finished);
+  if(j.tier===2)chime();
+  if(j.tier>=2)sparks(sr.width/2,sr.height*.4,j.tier===3?110:36,['#ffd36a','#fff1b8','#ffffff','#ffb3cf']);
+  if(j.tier===3)setTimeout(()=>{if(!c.dead)sparks(sr.width/2,sr.height*.4,70,['#ffd36a','#fff1b8','#ffe08a']);},900);
+  await c.w(fly.animate([{transform:TT(dx1,dy1,2,s1)},{transform:TT(dx1,dy1,-2,s1*1.03)}],{duration:show,easing:'ease-in-out',fill:'forwards'}).finished);
+  let target,rot=0,done,to;
+  if(j.tier===3&&j.total>=honorCoins){   /* hall of honour: stays until a bigger 1000+ gift arrives */
+    const h=$('honor'),hi=$('honimg'),hn=$('honnm'),was={coins:honorCoins,name:honName,seq:honSeq,src:hi.getAttribute('src'),on:h.classList.contains('on'),fs:hn.style.fontSize};
+    c.undo=()=>{honorCoins=was.coins;honName=was.name;honSeq=was.seq;hn.textContent=was.name;hn.style.fontSize=was.fs;
+      if(was.src)hi.src=was.src;else hi.removeAttribute('src');if(!was.on){h.classList.remove('on');h.style.visibility='';}};
+    honorCoins=j.total;honName=j.name;honSeq=++seqN;to='honor';
+    if(!was.on){h.style.visibility='hidden';h.classList.add('on');}
+    hi.src=url;hn.textContent=j.name;hn.style.fontSize=j.name.length>13?'1.05vh':j.name.length>9?'1.2vh':'';await c.w(new Promise(r=>{if(hi.complete)r();else hi.onload=r;}));
+    target=hi;done=()=>{h.style.visibility='visible';h.classList.remove('pop');void h.offsetWidth;h.classList.add('pop');};
+    if(was.src){h.style.visibility='visible';}
+  }else{
+    const it={url,gold:j.tier>=2,name:j.name,seq:++seqN};items.unshift(it);const popped=items.length>SLOTS.length?items.pop():null;to='string';
+    c.undo=()=>{const k=items.indexOf(it);if(k>=0)items.splice(k,1);if(popped)items.push(popped);renderGarland(false);};
+    renderGarland(true);target=SL[0].querySelector('img');rot=SLOTS[0].r;
+    done=()=>{SL[0].style.visibility='visible';SL[0].classList.add('swing');};
+  }
+  const tg=target.getBoundingClientRect(),s2=target.offsetWidth/w0,dx2=tg.left-sr.left+tg.width/2-cx0,dy2=tg.top-sr.top+tg.height/2-cy0;
+  await c.w(fly.animate([{transform:TT(dx1,dy1,-2,s1*1.03)},{transform:TT(dx2,dy2,rot,s2)}],{duration:800,easing:'cubic-bezier(.45,.05,.3,1)',fill:'forwards'}).finished);
+  fly.remove();c.fly=null;done();c.undo=null;c.placed=true;   /* from here ⏭ treats it as the newest sticker on the string / in the frame */
+  done1({name:j.name,tier:j.tier,count:j.count,total:j.total,wishLang:paper.meta.lang,wish:paper.meta.wish,stamp:paper.meta.stamp,usedFallbackAvatar:fb,fast,to,printMs:Math.round(dur),showMs:Math.round(show),ms:Math.round(performance.now()-t0)});
+  await sleep(300);
+}
+
+/* ---------- !тілек slip: quick print, quick cut, short show, drops away ---------- */
+async function printSlip(j,c){
+  guideHide();await c.w(fontsReady);await c.w(wake());
+  const paper=drawSlip(j.name),feed=$('feed'),prw=$('prw');
+  feed.innerHTML='';feed.style.height='0px';feed.appendChild(paper);feed.classList.add('has');
+  const H=Math.round(feed.clientWidth*paper.height/paper.width);
+  prw.classList.add('busy');buzz(1300);await c.w(animH(feed,H,1300,c));prw.classList.remove('busy');
+  await c.w(sleep(200));
+  const sc=$('sc');sc.style.opacity='1';let shut=false;c.sw=setInterval(()=>{shut=!shut;sc.classList.toggle('shut',shut);if(shut)snip();},110);
+  await c.w(sc.animate([{left:'-118%',opacity:0},{offset:.12,opacity:1},{left:'-2%',opacity:1}],{duration:750,easing:'ease-in-out',fill:'forwards'}).finished);
+  clearInterval(c.sw);sc.animate([{left:'-2%',opacity:1},{left:'14%',opacity:0}],{duration:250,fill:'forwards'}).finished.then(()=>sc.classList.remove('shut'),()=>{});
+  const sr=stage.getBoundingClientRect(),cr=paper.getBoundingClientRect();
+  const ar=paper.height/paper.width,w0=feed.clientWidth,h0=w0*ar,cx0=cr.left-sr.left+cr.width/2,cy0=cr.top-sr.top+cr.height/2;
+  const fly=document.createElement('img');fly.src=paper.toDataURL('image/png');fly.className='fly';c.fly=fly;
+  Object.assign(fly.style,{left:(cx0-w0/2)+'px',top:(cy0-h0/2)+'px',width:w0+'px',transformOrigin:'50% 50%'});
+  stage.appendChild(fly);feed.classList.remove('has');feed.innerHTML='';feed.style.height='0px';
+  const TT=(dx,dy,r,s)=>'translate('+dx+'px,'+dy+'px) rotate('+r+'deg) scale('+s+')';
+  const s1=sr.width*.44/w0,dx1=sr.width/2-cx0,dy1=sr.height*.42-cy0;
+  await c.w(fly.animate([{transform:TT(0,0,-6.42,1)},{transform:TT(dx1,dy1,1,s1)}],{duration:450,easing:'cubic-bezier(.3,.8,.3,1)',fill:'forwards'}).finished);
+  await c.w(sleep(1100));
+  await c.w(fly.animate([{transform:TT(dx1,dy1,1,s1),opacity:1},{transform:TT(dx1+sr.width*.12,dy1+sr.height*.35,24,s1*.8),opacity:0}],{duration:650,easing:'ease-in',fill:'forwards'}).finished);
+  fly.remove();c.fly=null;c.fin=true;
+  done1({slip:true,name:j.name,wishLang:paper.meta.lang,wish:paper.meta.wish,text:paper.meta.text});
+  await sleep(150);
+}
+/* ⏭ (owner only): takes an unwanted sticker off the screen.
+   While something is being printed, cut or shown: stop it at once, nothing reaches the string or the frame, the next job starts.
+   Otherwise: remove the newest piece — the newest sticker on the string, or the honour frame if it was filled after that sticker. */
+function skip(){
+  if(cur&&!cur.placed){if(cur.fin)return;const c=cur;c.kill();clearPrint(c);ttStats.skip++;ttLog('⏭ убрано с печати: '+c.j.name);return;}
+  const h=$('honor');
+  if(h.classList.contains('on')&&(!items.length||honSeq>items[0].seq)){const n=honName;honorCoins=0;honName='';honSeq=0;h.classList.remove('on','pop');h.style.visibility='';
+    $('honimg').removeAttribute('src');$('honnm').textContent='';ttStats.skip++;ttLog('⏭ рамка почёта очищена: '+n);}
+  else if(items.length){const it=items.shift();renderGarland(false);ttStats.skip++;ttLog('⏭ снят стикер: '+it.name);}}
+$('skip').addEventListener('click',skip);
+/* chat: only the fixed command is recognised; viewer text is never printed or shown. One slip per viewer (user id) in 5 minutes. */
+const lastWish=new Map();const WISH_GAP=5*60*1000;
+function chatMsg(v,text){
+  if(!/^\s*!(тілек|тилек|пожелание|wish)(\s|$)/i.test(text))return false;
+  const now=Date.now(),was=lastWish.get(v.id);if(was&&now-was<WISH_GAP)return false;
+  if(queue.filter(q=>q.slip).length>=6)return false;
+  if(lastWish.size>2000)lastWish.forEach((t,k)=>{if(now-t>=WISH_GAP)lastWish.delete(k);});
+  lastWish.set(v.id,now);enqueue({slip:true,name:v.name});return true;}
+
+/* ---------- viewers who join: short welcome, the printer peeks ---------- */
+const greet=n=>{const lg=nameLang(n);return lg==='kz'?'👋 Қош келдің, '+n+'!':lg==='ru'?'👋 Привет, '+n+'!':'👋 Привет, '+n+'! Welcome!';};
+let welQ=null,welOn=false;
+function welcome(name){welQ=name;if(!welOn)nextWelcome();}
+function nextWelcome(){if(!welQ){welOn=false;return;}welOn=true;try{guideHide();}catch(_){}const w=$('welcome');w.textContent=greet(welQ);welQ=null;w.classList.add('show');
+  if(sleeping){const l=$('led');l.classList.add('peek');setTimeout(()=>l.classList.remove('peek'),800);}
+  setTimeout(()=>{w.classList.remove('show');setTimeout(nextWelcome,350);},2000);}
+
+/* ---------- follows and shares go onto the receipt ---------- */
+let rNo=0;
+function receipt(name,kind,silent){rNo++;const d=document.createElement('div');d.className='new';
+  d.textContent=String(rNo).padStart(2,'0')+' '+(kind==='share'?'↗':'+')+' '+name;$('rlines').appendChild(d);
+  while($('rlines').children.length>30)$('rlines').firstChild.remove();if(!silent)tick();}
+
+/* ---------- idle hints (no gift wording) ---------- */
+/* the hint shrinks its font until the whole text fits on one line */
+function fitHint(){const h=$('hint');h.style.fontSize='';let fs=parseFloat(getComputedStyle(h).fontSize);for(let i=0;i<40&&h.scrollWidth>h.clientWidth+.5&&fs>7;i++){fs-=.4;h.style.fontSize=fs+'px';}}
+let hintI=0;
+function hintText(){const H=[tr('🖨 Здесь печатаются фото зрителей',"🖨 Viewers' photos get printed here"),tr('✍️ Напиши в чат !тілек — напечатаю пожелание','✍️ Type !wish in chat — I will print you a wish')];return H[hintI%H.length];}
+setInterval(()=>{if(!sleeping)return;const h=$('hint');h.style.opacity='0';setTimeout(()=>{hintI++;h.textContent=hintText();fitHint();h.style.opacity='';},500);},4500);
+
+
+/* ---------- music: the game's own lo-fi melody (made by code, no copyright) or the owner's songs ---------- */
+const MUS={mode:'gen',vol:30,cred:false};try{Object.assign(MUS,JSON.parse(localStorage.getItem('stMusic')||'{}'));}catch(_){}
+const saveMus=()=>{try{localStorage.setItem('stMusic',JSON.stringify(MUS));}catch(_){}};
+let mBus=null,mTimer=null,mNext=0,mStep=0,mProg=null;   /* oscillators only: the melody has no noise sources */
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+const CH={C:[36,[60,64,67,71]],Am:[33,[57,60,64,67]],Dm:[38,[57,60,62,65]],G:[31,[55,59,62,65]],F:[41,[53,57,60,64]],Em:[40,[55,59,62,64]]};
+const PROGS=[['C','Am','Dm','G'],['F','Em','Dm','C'],['Am','F','C','G'],['Dm','G','C','Am'],['F','G','Em','Am']];
+const PENTA=[72,74,76,79,81,84];
+const BEAT=60/74,EIGHTH=BEAT/2;
+function musBus(){const a=ac();if(!a)return null;if(mBus)return mBus;
+  const g=a.createGain(),lp=a.createBiquadFilter();lp.type='lowpass';lp.frequency.value=3200;lp.Q.value=.4;g.connect(lp);lp.connect(a.destination);
+  const dl=a.createDelay(1),fb=a.createGain(),wet=a.createGain();dl.delayTime.value=BEAT*.75;fb.gain.value=.32;wet.gain.value=.35;dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(g);
+  mBus={a,g,dl};setVol();return mBus;}
+function setVol(){if(mBus)mBus.g.gain.setTargetAtTime(Math.pow(MUS.vol/100,2)*.9,mBus.a.currentTime,.1);if(ownEl)ownEl.volume=MUS.vol/100;}
+function env(t,peak,att,dec,node){node.gain.setValueAtTime(0,t);node.gain.linearRampToValueAtTime(peak,t+att);node.gain.exponentialRampToValueAtTime(.0008,t+att+dec);}
+function ep(t,m,v,len){const {a,g,dl}=mBus;   /* soft electric piano */
+  [['sine',1,1],['triangle',2,.25]].forEach(([ty,mul,amp])=>{const o=a.createOscillator(),e=a.createGain();o.type=ty;o.frequency.value=mtof(m)*mul;o.detune.value=(Math.random()-.5)*8;
+    env(t,v*amp,.012,len,e);o.connect(e);e.connect(g);if(amp===1&&m>70)e.connect(dl);o.start(t);o.stop(t+len+.1);});}
+function bass(t,m,len){const {a,g}=mBus,o=a.createOscillator(),e=a.createGain();o.type='sine';o.frequency.value=mtof(m);env(t,.32,.02,len,e);o.connect(e);e.connect(g);o.start(t);o.stop(t+len+.1);}
+function rim(t){const {a,g}=mBus,o=a.createOscillator(),e=a.createGain(),f=a.createBiquadFilter();o.type='triangle';o.frequency.setValueAtTime(420,t);o.frequency.exponentialRampToValueAtTime(260,t+.05);
+  f.type='lowpass';f.frequency.value=1400;env(t,.12,.002,.09,e);o.connect(f);f.connect(e);e.connect(g);o.start(t);o.stop(t+.15);}
+function kick(t){const {a,g}=mBus,o=a.createOscillator(),e=a.createGain();o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(42,t+.18);env(t,.42,.004,.28,e);o.connect(e);e.connect(g);o.start(t);o.stop(t+.35);}
+function schedStep(t,i){const bar=Math.floor(i/8),pos=i%8,sw=pos%2?EIGHTH*.18:0,tt=t+sw;
+  if(pos===0&&bar%4===0)mProg=pick(PROGS);
+  const c=CH[mProg[bar%4]];
+  if(pos===0){c[1].forEach((m,k)=>ep(tt+k*.012+Math.random()*.01,m,.07,BEAT*3.2));bass(tt,c[0],BEAT*1.6);}
+  if(pos===5&&Math.random()<.5)c[1].slice(1).forEach(m=>ep(tt,m,.04,BEAT*1.2));
+  if(pos===4)bass(tt,c[0]+(Math.random()<.3?7:0),BEAT*1.2);
+  if(pos===0||pos===5||(pos===3&&Math.random()<.3))kick(tt);
+  if(pos===2||pos===6)rim(tt);
+  if(pos%2===0&&Math.random()<.32){const m=pick(PENTA);ep(tt+.01,m,.05,BEAT*1.4);}}
+function genStart(){if(!musBus())return;if(mTimer)return;mNext=mBus.a.currentTime+.1;mStep=0;mProg=pick(PROGS);
+  mTimer=setInterval(()=>{while(mNext<mBus.a.currentTime+.35){schedStep(mNext,mStep);mNext+=EIGHTH;mStep++;}},90);}
+function genStop(){if(mTimer){clearInterval(mTimer);mTimer=null;}}
+/* owner's songs (e.g. from Bensound or Pixabay): the same IndexedDB as index.html and names.html —
+   'printerSongs' v1, store 's', records {name, blob}. Read and add only; never change it. */
+const songs=[];let ownEl=null,ownI=0,songsLoaded=false,audioOn=false;
+function songDB(){return new Promise((res,rej)=>{try{const r=indexedDB.open('printerSongs',1);r.onupgradeneeded=()=>r.result.createObjectStore('s',{autoIncrement:true});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e);}});}
+function songSave(name,blob){songDB().then(db=>{db.transaction('s','readwrite').objectStore('s').add({name,blob});}).catch(()=>{});}
+function ownPlay(){if(!songs.length)return;if(ownI>=songs.length)ownI=0;if(!ownEl){ownEl=new Audio();ownEl.addEventListener('ended',()=>{ownI=(ownI+1)%songs.length;ownPlay();});}
+  ownEl.src=songs[ownI].url;ownEl.volume=MUS.vol/100;ownEl.play().catch(()=>{});$('mNow').textContent='▶ '+songs[ownI].name;}
+function ownStop(){if(ownEl){ownEl.pause();}}
+/* the same state on every control: the music block (#mm) and the small on-air panel */
+function musUI(){$('mGen').classList.toggle('on',MUS.mode==='gen');$('mOwn').classList.toggle('on',MUS.mode==='own');$('mOff').classList.toggle('on',MUS.mode==='off');
+  document.querySelectorAll('#mini .mchoice button').forEach(b=>b.classList.toggle('on',b.dataset.m===MUS.mode));
+  document.querySelectorAll('#mVol,.mvol').forEach(r=>{if(+r.value!==MUS.vol)r.value=MUS.vol;});document.querySelectorAll('#mVolv,.mvolv').forEach(b=>b.textContent=MUS.vol+'%');
+  $('mCred').checked=!!MUS.cred;}
+function musApply(){genStop();ownStop();
+  if(MUS.mode==='gen'){genStart();$('mNow').textContent='▶ Мелодия игры (lo-fi)';}
+  else if(MUS.mode==='own'&&songs.length)ownPlay();
+  else $('mNow').textContent=MUS.mode==='own'?'Добавьте песни кнопкой ➕':'Музыка выключена';
+  $('credit').classList.toggle('on',MUS.mode==='own'&&MUS.cred&&songs.length>0);musUI();saveMus();}
+function setVolume(v){MUS.vol=Math.max(0,Math.min(100,Math.round(+v||0)));musUI();setVol();saveMus();}
+$('mGen').addEventListener('click',()=>{ac();MUS.mode='gen';musApply();});
+$('mOwn').addEventListener('click',()=>{ac();MUS.mode='own';if(!songs.length)$('songs').click();musApply();});
+$('mAdd').addEventListener('click',()=>$('songs').click());
+$('mOff').addEventListener('click',()=>{MUS.mode='off';musApply();});
+$('songs').addEventListener('change',e=>{
+  const fs=[...e.target.files].filter(f=>/^audio\//.test(f.type)||/\.(mp3|m4a|aac|ogg|wav|opus|flac)$/i.test(f.name));
+  fs.forEach(f=>{const name=f.name.replace(/\.[^.]+$/,'').slice(0,40);songs.push({name,url:URL.createObjectURL(f)});songSave(name,f);});
+  e.target.value='';if(fs.length){MUS.mode='own';ownI=songs.length-1;musApply();}});
+document.querySelectorAll('#mVol,.mvol').forEach(r=>r.addEventListener('input',()=>setVolume(r.value)));
+$('mCred').addEventListener('change',e=>{MUS.cred=e.target.checked;musApply();});
+/* small on-air panel: source and volume only (no file picker) */
+document.querySelectorAll('#mini .mchoice button').forEach(b=>b.addEventListener('click',()=>{const m=b.dataset.m,msg=document.querySelector('#mini .mmsg');
+  if(m==='own'&&!songs.length){msg.textContent='Список песен пуст';return;}
+  msg.textContent='';ac();MUS.mode=m;musApply();}));
+musUI();
+songDB().then(db=>{const q=db.transaction('s').objectStore('s').getAll();
+  q.onsuccess=()=>{(q.result||[]).forEach(x=>{if(x&&x.blob)songs.push({name:x.name,url:URL.createObjectURL(x.blob)});});songsLoaded=true;songsReady();};q.onerror=()=>{songsLoaded=true;songsReady();};})
+  .catch(()=>{songsLoaded=true;songsReady();});
+/* «Мои песни» chosen but the list is empty → the game's melody (as before); the list arrives a moment after the page opens */
+function songsReady(){if(audioOn&&MUS.mode==='own'){if(!songs.length)MUS.mode='gen';musApply();}}
+/* browsers allow sound only after the first tap: start the music then */
+document.addEventListener('pointerdown',function first(){document.removeEventListener('pointerdown',first,true);audioOn=true;ac();sfxLoad();if(MUS.mode==='own'&&songsLoaded&&!songs.length)MUS.mode='gen';musApply();},true);
+/* the phone may pause audio while the owner is in the TikTok app: pick it up again */
+document.addEventListener('visibilitychange',()=>{if(document.hidden||!audioOn)return;ac();try{if(MUS.mode==='own'&&ownEl&&ownEl.paused&&songs.length){const r=ownEl.play();if(r&&r.catch)r.catch(()=>{});}}catch(_){}});
+
+/* ---------- gift guide: first 10 s after load, then every 60 s, for 8 s; skipped while a sticker is printing, hidden when a job starts ---------- */
+const GUIDE={ru:['Фото-стикер','С узором','Золотой','Место почёта 🏆'],en:['Photo sticker','Ornament','Golden','Hall of fame 🏆']};
+const GUIDE_EVERY=60000,GUIDE_SHOW=8000;
+let guideOn=(()=>{try{return localStorage.getItem('stGuide')!=='0';}catch(_){return true;}})(),guideT=0;
+function guideText(){const sp=[...document.querySelectorAll('#gguide .gi span')];sp.forEach((e,i)=>e.textContent=GUIDE[LANG][i]);
+  /* shrink the guide's font until every text fits (phone fonts differ) */
+  const g=$('gguide');g.style.fontSize='';let fs=parseFloat(getComputedStyle(g).fontSize);for(let i=0;i<30&&sp.some(e=>e.scrollWidth>e.clientWidth+.5)&&fs>7;i++){fs-=.4;g.style.fontSize=fs+'px';}}
+function guideHide(){clearTimeout(guideT);$('gguide').classList.remove('show');}
+function guideShow(force){if(!guideOn||(!force&&(busy||welOn)))return;guideText();const g=$('gguide');g.classList.add('show');clearTimeout(guideT);guideT=setTimeout(()=>g.classList.remove('show'),GUIDE_SHOW);}
+function guideUI(){document.querySelectorAll('.gdbtn').forEach(b=>{b.textContent=(b.classList.contains('wide')?'🎁 Подсказка о подарках: ':'🎁 Подсказка: ')+(guideOn?'вкл':'выкл');b.classList.toggle('on',guideOn);});if(!guideOn)guideHide();}
+document.querySelectorAll('.gdbtn').forEach(b=>b.addEventListener('click',()=>{guideOn=!guideOn;try{localStorage.setItem('stGuide',guideOn?'1':'0');}catch(_){}guideUI();if(guideOn)guideShow(true);}));
+guideUI();setTimeout(()=>{guideShow();setInterval(guideShow,GUIDE_EVERY);},10000);
+
+/* ---------- receipt title and lines sized to the receipt ---------- */
+/* shrink the receipt title until it fits on any phone font */
+/* receipt text is sized from the receipt width: lines fit "00 + " and a 9-letter name, the title always fits */
+function fitHd(){const t=$('rcpt').querySelector('.tape'),w=t.clientWidth-parseFloat(getComputedStyle(t).paddingLeft)*2;if(w<=0)return;
+  $('rlines').style.fontSize=Math.max(5,w/(14*.62))+'px';
+  /* title: measure the real text width (span) and keep 10% spare room, because bold letters like «Я» draw past their box */
+  const h=$('rhd');let sp=h.querySelector('span');if(!sp||sp.textContent!==h.dataset.t){h.innerHTML='';sp=document.createElement('span');sp.textContent=h.dataset.t||h.textContent;h.appendChild(sp);}
+  let fs=Math.max(5,w/(sp.textContent.length*.6));h.style.fontSize=fs+'px';const room=h.clientWidth*.9;
+  for(let i=0;i<40&&sp.getBoundingClientRect().width>room&&fs>5;i++){fs-=.3;h.style.fontSize=fs+'px';}}
+new ResizeObserver(fitHd).observe($('rcpt'));
+if(document.fonts){document.fonts.ready.then(fitHd);document.fonts.addEventListener&&document.fonts.addEventListener('loadingdone',()=>setTimeout(fitHd,50));}
+setInterval(fitHd,2500);   /* the web font can arrive late and is wider than the phone font */
+/* screen language (RU/EN): only what viewers see; the panels stay Russian */
+function applyLang(){const lb=$('lang');if(lb)lb.textContent=LANG.toUpperCase();document.querySelectorAll('.lchoice button').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
+  try{guideText();}catch(_){}updQ();$('rhd').dataset.t=tr('НОВЫЕ ДРУЗЬЯ','NEW FRIENDS');$('rhd').innerHTML='';fitHd();$('hint').textContent=hintText();fitHint();}
+function setLang(v){LANG=v==='en'?'en':'ru';try{localStorage.setItem('stLang',LANG);}catch(_){}applyLang();}
+document.querySelectorAll('.lchoice button').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.l)));
+/* sound effects (printer, scissors, chimes) on/off — the same state on every button */
+function sndUI(){document.querySelectorAll('.sndb').forEach(b=>b.textContent=(sound?'🔈':'🔇')+' Звуки принтера: '+(sound?'вкл':'выкл'));
+  const b=$('snd');if(b){b.classList.toggle('on',sound);b.textContent=sound?'🔈 Звук':'🔇 Звук';}}
+const sndToggle=()=>{sound=!sound;sndUI();};
+document.querySelectorAll('.sndb').forEach(b=>b.addEventListener('click',sndToggle));sndUI();
+
+/* ---------- TikTok LIVE connection (Euler Stream WebSocket, JSON events) — same logic as names.html ---------- */
+let ttWs=null,ttWant=false,ttTry=0,ttTO=null;const ttLines=[],ttStreak=new Map(),ttTypes={},ttStats={gift:0,member:0,like:0,chat:0,follow:0,share:0,wish:0,drop:0,skip:0};
+const followSeen=new Set(),shareSeen=new Set();let socialN=0,chatN=0;   /* one follow line and one share line per user per page load */
+function ttGet(k){try{return localStorage.getItem(k)||'';}catch(_){return '';}}
+function ttSet(k,v){try{localStorage.setItem(k,v);}catch(_){}}
+function ttStatus(t){$('st').textContent=t;}
+function onAir(on){document.body.classList.toggle('onair',!!on);}
+function ttLog(t){if(t)ttLines.unshift(new Date().toLocaleTimeString().slice(0,8)+'  '+t);if(ttLines.length>10)ttLines.pop();
+  const types=Object.keys(ttTypes).map(k=>k+' ×'+ttTypes[k]).join(', ')||'пока нет';
+  $('log').textContent=ttLines.join('\n')+'\n\nПодарки: '+ttStats.gift+' · Зрители: '+ttStats.member+' · Лайки: '+ttStats.like+' · Чат: '+ttStats.chat+' · Подписки: '+ttStats.follow+' · Репосты: '+ttStats.share+' · Пожелания: '+ttStats.wish+'\nТипы событий: '+types;}
+function ttConnect(){
+  if(TEST)return;   /* the test page never opens a connection */
+  clearTimeout(ttTO);if(ttWs){try{ttWs.onclose=null;ttWs.close(1000);}catch(_){}ttWs=null;}
+  const u=ttGet('ttUser'),k=ttGet('ttKey');if(!u||!k)return;
+  ttStatus('Подключение к @'+u+' …');
+  let ws;try{ws=new WebSocket('wss://ws.eulerstream.com?uniqueId='+encodeURIComponent(u)+'&apiKey='+encodeURIComponent(k));}
+  catch(e){ttStatus('Ошибка: браузер не разрешил подключение');ttLog(String(e));return;}
+  ttWs=ws;
+  ws.onopen=()=>{ttTry=0;onAir(true);ttStatus('✅ Подключено к @'+u+' — ждём события');ttLog('соединение открыто');};
+  ws.onmessage=ev=>{
+    if(typeof ev.data!=='string'){ttLog('пришли двоичные данные — формат не JSON');return;}
+    let d;try{d=JSON.parse(ev.data);}catch(_){ttLog('не удалось прочитать сообщение');return;}
+    const list=Array.isArray(d&&d.messages)?d.messages:(d&&d.type?[d]:[]);
+    list.forEach(m=>{try{ttHandle(m);}catch(e){ttLog('ошибка в событии '+(m&&m.type)+': '+e.message);}});};
+  ws.onerror=()=>ttLog('ошибка соединения');
+  ws.onclose=e=>{ttWs=null;const c=e.code;
+    const why={4401:'неверный ключ',4403:'нет доступа',4404:'эфир не начат',4429:'слишком много подключений',4005:'эфир закончился',4400:'неверные данные',4006:'нет сообщений',4500:'TikTok закрыл соединение',4555:'время соединения истекло'}[c]||('код '+c);
+    ttLog('соединение закрыто: '+why);
+    if(!ttWant){ttStatus('Отключено');onAir(false);return;}
+    if(c===4401||c===4403||c===4400){ttWant=false;onAir(false);ttStatus('❌ '+why+' — проверьте TikTok и ключ');return;}
+    if(c===4005){ttWant=false;onAir(false);ttStatus('Эфир закончился');return;}
+    ttTry++;if(c!==4404&&ttTry>40){ttWant=false;onAir(false);ttStatus('❌ Не удалось подключиться ('+why+')');return;}
+    const wait=c===4404?Math.min(60000,20000+ttTry*2000):6000;   /* each try costs one Euler request (free plan: 500/hour) */
+    ttStatus((c===4404?'⏳ Эфир ещё не начат — ':'🔄 Переподключение — ')+'попытка '+ttTry+' через '+(wait/1000)+' с');
+    ttTO=setTimeout(()=>{if(ttWant)ttConnect();},wait);};
+}
+/* viewer: {name, id, pic}. The name is nickname / displayId / uniqueId (never secUid), cleaned here once.
+   Picture: https links only, a non-webp link first (as names.html). On the test page only, same-origin and blob: links are accepted too
+   (the checks run on a local http server and the 📷 button gives a blob link). */
+const picOk=x=>{if(typeof x!=='string')return false;if(/^https:/.test(x))return true;if(!TEST)return false;
+  if(/^blob:/.test(x))return true;try{return new URL(x,location.href).origin===location.origin;}catch(_){return false;}};
+function ttUser(u){u=u||{};
+  const pname=String(u.nickname||u.displayId||u.uniqueId||u.secUid||'Зритель').trim().slice(0,24)||'Зритель';
+  const raw=[u.nickname,u.displayId,u.uniqueId].map(x=>x==null?'':String(x).trim()).find(x=>x)||'';
+  let pic='';for(const p of [u.avatarThumb,u.avatarMedium,u.avatarLarge,u.profilePicture]){if(!p)continue;const l=p.urlList||p.url||p.urls||p.url_list;
+    if(Array.isArray(l))pic=l.find(x=>picOk(x)&&!/\.webp(\?|$)/i.test(x))||l.find(picOk)||'';if(pic)break;}
+  return {name:cleanName(raw),id:String(u.userId||u.id||u.idStr||pname),pic};}
+/* a combo streak ends: one sticker for everything not printed yet */
+function giftEnd(key,del){const r=ttStreak.get(key);if(!r)return;clearTimeout(r.to);r.to=0;const n=r.n-r.done;r.done=r.n;if(del)ttStreak.delete(key);if(n>0)addGift(r.v,r.dia,n,r.av);}
+function ttHandle(m){
+  const t=m&&m.type,d=(m&&m.data)||{};
+  ttTypes[t]=(ttTypes[t]||0)+1;
+  if(t==='WebcastGiftMessage'){
+    const v=ttUser(d.user),key=v.id+'|'+(d.giftId||'')+'|'+(d.groupId||d.comboId||''),now=Date.now();
+    ttStreak.forEach((r,k)=>{if(!r.to&&now-r.t>=8000)ttStreak.delete(k);});   /* an old record (8 s without updates) is forgotten: the next gift is a new send */
+    /* a combo streak sends several updates, each with the running count: ONE sticker per combo, printed when the streak ends
+       (repeatEnd, or a gift type that cannot be a streak, or 3 s without a new update) */
+    const cnt=Math.max(1,+(d.repeatCount||d.comboCount||1)||1);
+    const g=d.gift||d.giftDetails||d.extendedGiftInfo||{},dia=+(g.diamondCount||g.diamond_count||d.diamondCount||0)||0;   /* coins per gift; never shown on the stage */
+    let r=ttStreak.get(key);
+    if(!r){r={n:0,done:0,t:now,to:0,v,dia:1,av:loadPic(v.pic)};ttStreak.set(key,r);}   /* the picture starts loading now, not when printing starts */
+    r.n=Math.max(r.n,cnt);r.t=now;if(dia>0)r.dia=dia;clearTimeout(r.to);r.to=0;
+    const ty=g.type??g.giftType??d.giftType,end=d.repeatEnd===1||d.repeatEnd===true,single=typeof ty==='number'&&ty!==1;
+    if(end||single)giftEnd(key,true);else{r.to=setTimeout(()=>giftEnd(key,false),3000);ttLog();}}
+  else if(t==='WebcastMemberMessage'){const v=ttUser(d.user);ttStats.member++;welcome(v.name);ttLog('👋 зритель: '+v.name);}
+  else if(t==='WebcastLikeMessage'){ttStats.like+=Math.max(1,+(d.count||d.likeCount||1)||1);ttLog();}   /* counted in the log only */
+  else if(t==='WebcastChatMessage'){ttStats.chat++;
+    if(chatN<3){chatN++;ttLog('чат: поля сообщения = '+Object.keys(d).join(', ').slice(0,160));}   /* field names only (never the text), to see on a real stream where the text is */
+    const text=[d.comment,d.content,d.text].find(x=>typeof x==='string'&&x.trim())||'';
+    if(text){const v=ttUser(d.user);if(chatMsg(v,text)){ttStats.wish++;ttLog('✍ пожелание: '+v.name);return;}}
+    ttLog();}
+  else if(t==='WebcastSocialMessage'){const dt=(d.common&&d.common.displayText)||'',k=JSON.stringify(dt)+' '+(d.action||'');
+    if(socialN<5){socialN++;ttLog('соц. событие: action='+String(d.action)+' · key='+String((dt&&dt.key)||JSON.stringify(dt)).slice(0,80));}   /* raw data, to see on a real stream how follows and shares arrive */
+    if(/follow/i.test(k)||d.action===1||d.action==='1'){ttStats.follow++;const v=ttUser(d.user);
+      if(followSeen.has(v.id))ttLog('➕ подписка: '+v.name+' (повтор — пропущена)');
+      else{followSeen.add(v.id);receipt(v.name,'follow');ttLog('➕ подписка: '+v.name);}}
+    else if(/share/i.test(k)){ttStats.share++;const v=ttUser(d.user);
+      if(shareSeen.has(v.id))ttLog('↗ репост: '+v.name+' (повтор — пропущен)');
+      else{shareSeen.add(v.id);receipt(v.name,'share');ttLog('↗ репост: '+v.name);}}
+    else ttLog();}
+  else if(t==='roomInfo'){ttLog('эфир найден');}
+  else if(t==='tiktok.connect'){ttStatus('✅ Подключено к эфиру @'+ttGet('ttUser'));ttLog('подключено к TikTok');}
+  else if(t==='tiktok.disconnect'){ttLog('TikTok отключился');}
+  else if(t==='room.status'){ttLog('статус: '+((d&&d.state)||''));}
+  else ttLog();
+}
+
+/* ---------- settings panel ---------- */
+const pan=$('pan');
+function panOpen(){$('tuser').value=ttGet('ttUser');$('tkey').value=ttGet('ttKey');$('mmHome').appendChild($('mm'));pan.classList.add('open');}
+function panClose(){pan.classList.remove('open');if(TEST)$('panel').appendChild($('mm'));}   /* on the test page the music block lives in the demo panel */
+$('gear').addEventListener('click',panOpen);
+$('px').addEventListener('click',panClose);
+const readForm=()=>({u:$('tuser').value.trim().replace(/^@/,''),k:$('tkey').value.trim()});
+$('copy').addEventListener('click',()=>{const {u,k}=readForm();
+  if(!u||!k){ttStatus('Сначала введите TikTok и ключ');return;}ttSet('ttUser',u);ttSet('ttKey',k);
+  const link='https://bm95201212.github.io/printer-live/sticker.html?u='+encodeURIComponent(u)+'&k='+encodeURIComponent(k),f=$('link');
+  f.value=link;f.style.display='block';f.select();
+  const ok=()=>ttStatus('✅ Ссылка скопирована'),bad=()=>{try{if(document.execCommand('copy'))ok();else throw 0;}catch(_){ttStatus('Выделите ссылку ниже и скопируйте её');}};
+  try{navigator.clipboard.writeText(link).then(ok,bad);}catch(_){bad();}});
+$('go').addEventListener('click',()=>{
+  if(TEST){ttStatus('Тестовый режим: TikTok не подключается');return;}
+  const {u,k}=readForm();if(!u||!k){ttStatus('Введите TikTok и ключ');return;}ttSet('ttUser',u);ttSet('ttKey',k);ttWant=true;ttTry=0;ttConnect();});
+$('stop').addEventListener('click',()=>{ttWant=false;clearTimeout(ttTO);if(ttWs){try{ttWs.close(1000);}catch(_){}}ttWs=null;onAir(false);ttStatus('Отключено');ttLog('отключено вручную');});
+ttLog();
+if(TEST)ttStatus('Тестовый режим: TikTok не подключается');
+else if(ttGet('ttUser'))ttStatus('Не подключено (@'+ttGet('ttUser')+')');
+
+/* ---------- phone: fullscreen on tap, screen kept on, hidden corners to reopen the panels ---------- */
+function isFs(){return !!(document.fullscreenElement||document.webkitFullscreenElement);}
+function goFs(){const el=document.documentElement;
+  try{if(isFs())return;const r=el.requestFullscreen?el.requestFullscreen():(el.webkitRequestFullscreen?el.webkitRequestFullscreen():null);if(r&&r.catch)r.catch(()=>{});}catch(_){}}
+let wakeL=null,wakeP=false;
+async function keepAwake(){if(wakeP)return;try{if(document.hidden||wakeL||!navigator.wakeLock)return;wakeP=true;const w=await navigator.wakeLock.request('screen');wakeL=w;
+  w.addEventListener('release',()=>{if(wakeL===w)wakeL=null;});}catch(_){wakeL=null;}finally{wakeP=false;}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)keepAwake();});
+document.addEventListener('pointerdown',()=>{keepAwake();},true);
+stage.addEventListener('contextmenu',e=>e.preventDefault());
+stage.addEventListener('click',()=>{if(!isFs())goFs();keepAwake();ac();});   /* sound and music start in the first-tap handler above (one mechanism); here the context is only resumed */
+/* two hidden corners, 3 taps within 1.5 s: top-left = main settings, top-right = small on-air panel */
+let cornerL=[],cornerR=[];
+const tap3=(arr,now)=>{arr=arr.filter(t=>now-t<1500);arr.push(now);return arr;};
+stage.addEventListener('pointerdown',e=>{const r=stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,now=Date.now();
+  const top=y<r.height*.10,onGear=!!(e.target&&e.target.closest&&e.target.closest('#gear'));
+  if(top&&x<r.width*.15){cornerL=tap3(cornerL,now);if(cornerL.length>=3){cornerL=[];panOpen();}}else cornerL=[];
+  if(onGear)return;   /* taps on the visible ⚙ do not count for the small panel's corner */
+  if(top&&x>r.width*.85){cornerR=tap3(cornerR,now);if(cornerR.length>=3){cornerR=[];document.querySelector('#mini .mmsg').textContent='';$('mini').classList.add('open');musUI();}}else cornerR=[];});
+$('mx').addEventListener('click',()=>$('mini').classList.remove('open'));
+
+/* ---------- link mode / saved settings: connect by itself (never in test mode) ---------- */
+if(!TEST){try{const u=(Q0.get('u')||'').trim().replace(/^@/,''),k=(Q0.get('k')||'').trim();
+  if(u&&k){ttSet('ttUser',u);ttSet('ttKey',k);}
+  if(ttGet('ttUser')&&ttGet('ttKey')){ttWant=true;ttTry=0;setTimeout(ttConnect,800);}}catch(_){}}
+
+/* ---------- test mode (?test=1 only): demo panel, sample stickers, never connects ---------- */
+if(TEST){
+  $('panel').appendChild($('mm'));
+  /* ⏭ stays reachable: it sits just above the demo panel */
+  new ResizeObserver(()=>stage.style.setProperty('--ph',($('panel').offsetHeight||0)+'px')).observe($('panel'));
+  const TPIC=['woman','man_sun','cat','sunset','puppy','flowers','mountains','girl','coffee','man_laugh','horse'];
+  let tid=1,nextPhoto=null;
+  /* a typed name is one and the same viewer every time; an empty field gives a new viewer; some viewers have no picture */
+  const tuser=(any,photo)=>{const typed=any?'':($('who').value||'').trim(),u={userId:typed?'who:'+typed:'t'+(tid++),nickname:typed||pick(NAMES)};
+    if(photo)u.avatarThumb={urlList:[photo]};else if(Math.random()<.7)u.avatarThumb={urlList:[new URL('img/av_'+pick(TPIC)+'.jpg',location.href).href]};return u;};
+  /* every demo button sends a fake message through ttHandle, the same way real events arrive */
+  const gift=(gid,n,any,photo)=>ttHandle({type:'WebcastGiftMessage',data:{user:tuser(any,photo),giftId:'test_'+gid,repeatCount:n||1,repeatEnd:1,gift:{diamondCount:GIFTS[gid].cost}}});
+  const side=(ev,any)=>{const user=tuser(any);
+    if(ev==='join')ttHandle({type:'WebcastMemberMessage',data:{user}});
+    else if(ev==='follow')ttHandle({type:'WebcastSocialMessage',data:{user,common:{displayText:{key:'pm_main_follow_message_viewer_2'}},action:1}});
+    else if(ev==='share')ttHandle({type:'WebcastSocialMessage',data:{user,common:{displayText:{key:'pm_mt_guidance_viewer_share_live'}},action:3}});
+    else if(ev==='wish')ttHandle({type:'WebcastChatMessage',data:{user,comment:'!тілек'}});};
+  document.querySelectorAll('#panel [data-g]').forEach(b=>b.addEventListener('click',()=>{ac();gift(b.dataset.g,+(b.dataset.n||1),false,nextPhoto);nextPhoto=null;$('photo').classList.remove('on');$('photo').textContent='📷 Фото';}));
+  document.querySelectorAll('#panel [data-ev]').forEach(b=>b.addEventListener('click',()=>{ac();side(b.dataset.ev,false);}));
+  $('photo').addEventListener('click',()=>$('pf').click());
+  $('pf').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;nextPhoto=URL.createObjectURL(f);$('photo').classList.add('on');$('photo').textContent='✅ Фото';e.target.value='';});
+  let autoT=null;
+  $('auto').addEventListener('click',()=>{ac();if(autoT){clearTimeout(autoT);autoT=null;$('auto').classList.remove('on');$('auto').textContent='Авто ▶';return;}
+    $('auto').classList.add('on');$('auto').textContent='Авто ■';
+    (function loop(){const r=Math.random();
+      if(r<.5)gift('rose',1,true);else if(r<.62)gift('rose',10,true);else if(r<.84)gift('donut',1,true);else if(r<.97)gift('gem',1,true);else gift('lion',1,true);
+      autoT=setTimeout(loop,3500+Math.random()*4500);})();
+    (function sideLoop(){if(!autoT)return;const r=Math.random();
+      side(r<.45?'join':r<.72?'follow':r<.85?'share':'wish',true);
+      setTimeout(sideLoop,1200+Math.random()*1800);})();});
+  $('mus').addEventListener('click',()=>{$('mm').classList.toggle('open');$('mus').classList.toggle('on',$('mm').classList.contains('open'));});
+  $('snd').addEventListener('click',sndToggle);
+  $('lang').addEventListener('click',()=>setLang(LANG==='en'?'ru':'en'));
+  $('zb').addEventListener('click',()=>{$('zones').classList.toggle('on');$('zb').classList.toggle('on');});
+  $('hide').addEventListener('click',()=>{$('panel').classList.add('hide');goFs();});
+  $('show').addEventListener('click',()=>$('panel').classList.remove('hide'));
+  /* first look: two sample pieces on the string, two sample lines on the receipt */
+  fontsReady.then(()=>{if(items.length)return;[['Captain',2,1],['Айгерім',0,1]].reverse().forEach(([n,t,c])=>{items.unshift({url:drawPaper(demoAvatar(),n,t,c).toDataURL('image/png'),gold:t>=2,name:n,seq:0});});renderGarland(false);});
+  receipt('Asel_kz','follow',1);receipt('Дәулет','share',1);
+  window.__stickerSend=m=>ttHandle(m);   /* for the automatic checks: a fake event through the real path */
+}else{
+  /* on air there is no demo panel at all: the stage starts empty */
+  ['panel','show','zones','pf'].forEach(id=>{const e=$(id);if(e)e.remove();});
+}
+/* read-only state for the automatic checks (never shown) */
+Object.defineProperty(window,'__sticker',{get:()=>({
+  test:TEST,busy,sleeping,
+  queue:queue.map(q=>q.slip?{slip:true,name:q.name,tier:null,count:null}:{slip:false,name:q.name,tier:q.tier,count:q.count}),
+  now:cur?{name:cur.j.name,slip:!!cur.j.slip,tier:cur.j.slip?null:cur.j.tier,count:cur.j.slip?null:cur.j.count,placed:cur.placed}:null,
+  string:items.map(i=>i.name),stringGold:items.map(i=>!!i.gold),
+  honor:{on:$('honor').classList.contains('on'),name:honName,total:honorCoins},
+  receipt:[...$('rlines').children].map(e=>e.textContent),
+  last:last?Object.assign({},last):null,history:hist.map(h=>Object.assign({},h)),
+  guide:{on:guideOn,visible:$('gguide').classList.contains('show')},
+  welcome:{visible:welOn,text:$('welcome').textContent},
+  counters:Object.assign({},ttStats,{types:Object.assign({},ttTypes),streaks:ttStreak.size}),
+  audio:{state:AC?AC.state:'none',mode:MUS.mode,vol:MUS.vol,gain:mBus?mBus.g.gain.value:null,playing:!!mTimer,songs:songs.length,sound},
+  onair:document.body.classList.contains('onair'),lang:LANG})});
+
+applyLang();idleLater();
+})();
+</script>
+</body>
+</html>

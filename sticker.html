@@ -129,6 +129,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:system-ui,-app
   background:rgba(14,10,8,.55);backdrop-filter:blur(.6vh);-webkit-backdrop-filter:blur(.6vh);box-shadow:0 .6vh 1.8vh rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.14);
   color:#fff;font:700 1.6vh/1.15 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;opacity:0;transform:translateY(-.8vh);transition:opacity .6s,transform .6s;pointer-events:none}
 #gguide.show{opacity:.94;transform:none}
+#credit.on~#gguide{top:15.2%}   /* the music credit keeps its corner; the guide moves just below it */
 #gguide .gi{display:flex;align-items:center;gap:.9vh;white-space:nowrap;min-width:0}
 #gguide .gi b{font-size:2.4vh;line-height:1;font-weight:400}
 #gguide .gi span{overflow:hidden;text-overflow:ellipsis}
@@ -558,7 +559,7 @@ function guideText(){const sp=[...document.querySelectorAll('#gguide .gi span')]
   /* shrink the guide's font until every text fits (phone fonts differ) */
   const g=$('gguide');g.style.fontSize='';let fs=parseFloat(getComputedStyle(g).fontSize);for(let i=0;i<30&&sp.some(e=>e.scrollWidth>e.clientWidth+.5)&&fs>7;i++){fs-=.4;g.style.fontSize=fs+'px';}}
 function guideHide(){clearTimeout(guideT);$('gguide').classList.remove('show');}
-function guideShow(force){if(!guideOn||(!force&&busy))return;guideText();const g=$('gguide');g.classList.add('show');clearTimeout(guideT);guideT=setTimeout(()=>g.classList.remove('show'),GUIDE_SHOW);}
+function guideShow(force){if(!guideOn||(!force&&(busy||welOn)))return;guideText();const g=$('gguide');g.classList.add('show');clearTimeout(guideT);guideT=setTimeout(()=>g.classList.remove('show'),GUIDE_SHOW);}
 function guideUI(){$('gdb').textContent='🎁 Подсказка: '+(guideOn?'вкл':'выкл');$('gdb').classList.toggle('on',guideOn);if(!guideOn)guideHide();}
 $('gdb').addEventListener('click',()=>{guideOn=!guideOn;try{localStorage.setItem('stGuide',guideOn?'1':'0');}catch(_){}guideUI();if(guideOn)guideShow(true);});
 guideUI();setTimeout(()=>{guideShow();setInterval(guideShow,GUIDE_EVERY);},10000);

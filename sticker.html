@@ -192,6 +192,14 @@ body.onair #gear{display:none}
 .lchoice button.on{background:#3a5bff!important;border-color:#7d9bff!important}
 #mini .mmsg{margin-top:8px;font-size:15px;color:#ffd28a;text-align:center}
 #mini .mmsg:empty{display:none}
+
+/* big-gift show: the room goes dark around a spotlight on the printer, fireworks and confetti on a canvas */
+#dim{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;transition:opacity .9s ease;
+  background:radial-gradient(circle at var(--sx,50%) var(--sy,48%),rgba(0,0,0,0) 0,rgba(0,0,0,0) 15%,rgba(6,3,12,.62) 34%,rgba(4,2,8,.86) 60%)}
+#dim.l2{opacity:.6}#dim.l3{opacity:1}
+#fx{position:absolute;inset:0;width:100%;height:100%;z-index:10;pointer-events:none}
+#thanks.big{font-size:2.6vh;padding:1.1vh 2.6vh;box-shadow:0 0 3.6vh rgba(255,210,90,.85);animation:thx 1.2s ease-in-out infinite alternate}
+@keyframes thx{to{box-shadow:0 0 5vh rgba(255,220,110,1)}}
 </style>
 </head>
 <body>
@@ -210,6 +218,8 @@ body.onair #gear{display:none}
     </div>
   </div>
 
+  <div id="dim"></div>
+  <canvas id="fx"></canvas>
   <div id="flash"></div>
   <div id="thanks"></div>
   <div id="welcome"></div>
@@ -437,10 +447,15 @@ function drawSlip(name){
 let AC=null,sound=true,buzzOff=null;
 function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(_){}}if(AC&&AC.state==='suspended')AC.resume();return AC;}
 /* real recordings from Pixabay (uploader: freesound_community; Pixabay Content License), cut for this game: a seamless thermal-printer loop and three scissor snips */
-const SFX_SRC={pr:'snd/sticker/printer_loop.wav',s:['snd/sticker/snip0.wav','snd/sticker/snip1.wav','snd/sticker/snip2.wav']};const SFX={pr:null,s:[]};let sfxLoading=false;
+const SFX_SRC={pr:'snd/sticker/printer_loop.wav',s:['snd/sticker/snip0.wav','snd/sticker/snip1.wav','snd/sticker/snip2.wav'],c2:'snd/sticker/cheer_mid.mp3',c3:'snd/sticker/cheer_big.mp3'};const SFX={pr:null,s:[],c2:null,c3:null};   /* cheers: Pixabay (driken5482, dragon-studio), Pixabay Content License */let sfxLoading=false;
 function sfxLoad(){const a=AC;if(!a||sfxLoading)return;sfxLoading=true;
   const dec=u=>fetch(u).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();}).then(b=>new Promise((res,rej)=>a.decodeAudioData(b,res,rej)));
-  dec(SFX_SRC.pr).then(b=>SFX.pr=b).catch(()=>{});SFX_SRC.s.forEach(u=>dec(u).then(b=>SFX.s.push(b)).catch(()=>{}));}
+  dec(SFX_SRC.pr).then(b=>SFX.pr=b).catch(()=>{});SFX_SRC.s.forEach(u=>dec(u).then(b=>SFX.s.push(b)).catch(()=>{}));
+  dec(SFX_SRC.c2).then(b=>SFX.c2=b).catch(()=>{});dec(SFX_SRC.c3).then(b=>SFX.c3=b).catch(()=>{});}
+/* a recorded cheer (one at a time; ⏭ stops it) */
+let cheerSrc=null;
+function cheer(k,vol){const a=ac();if(!a||!sound||!SFX[k])return;cheerStop();const src=a.createBufferSource(),g=a.createGain();src.buffer=SFX[k];g.gain.value=vol;src.connect(g);g.connect(a.destination);src.start();cheerSrc=src;src.onended=()=>{if(cheerSrc===src)cheerSrc=null;};}
+function cheerStop(){if(cheerSrc){try{cheerSrc.stop();}catch(_){}cheerSrc=null;}}
 function buzz(ms){const a=ac();if(!a||!sound)return;sfxLoad();
   if(SFX.pr){const t=a.currentTime,src=a.createBufferSource(),g=a.createGain();src.buffer=SFX.pr;src.loop=true;src.playbackRate.value=.97+Math.random()*.06;
     g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.55,t+.03);g.gain.setValueAtTime(.55,t+ms/1000-.08);g.gain.linearRampToValueAtTime(0,t+ms/1000);
@@ -487,6 +502,65 @@ async function wake(){if(!sleeping)return;setSleep(false);const b=$('bang');b.cl
 
 /* the printed text uses a web font with Kazakh letters; canvas must wait until it has loaded */
 const fontsReady=Promise.race([Promise.all(['800 28px "JetBrains Mono"','700 13px "JetBrains Mono"'].map(f=>document.fonts.load(f,'Әә Ққ Ңң Abc'))).catch(()=>{}),new Promise(r=>setTimeout(r,2000))]);
+/* ---------- big-gift show (100+ and 1000+): darkness + spotlight, fireworks, confetti, made-by-code sounds (no noise) ---------- */
+const fxC=$('fx'),fxX=fxC.getContext('2d');let fxP=[],fxRaf=0,fxTimers=[];
+function fxSize(){const r=stage.getBoundingClientRect(),d=Math.min(2,window.devicePixelRatio||1);fxC.width=Math.round(r.width*d);fxC.height=Math.round(r.height*d);fxX.setTransform(d,0,0,d,0,0);}
+new ResizeObserver(fxSize).observe(stage);fxSize();
+function fxRun(){if(fxRaf)return;let t0=performance.now();
+  (function f(now){const dt=Math.min(50,now-t0)/1000;t0=now;const W=fxC.width,H=fxC.height,r=stage.getBoundingClientRect();
+    fxX.clearRect(0,0,r.width,r.height);
+    fxP=fxP.filter(p=>{p.life-=dt;if(p.life<=0)return false;
+      if(p.k==='s'){p.vx*=.985;p.vy=p.vy*.985+r.height*.22*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
+        const a=Math.min(1,p.life/p.max*1.6);fxX.globalCompositeOperation='lighter';fxX.globalAlpha=a;fxX.fillStyle=p.c;fxX.beginPath();fxX.arc(p.x,p.y,p.sz*(.5+.5*a),0,7);fxX.fill();
+        fxX.globalAlpha=a*.35;fxX.beginPath();fxX.arc(p.x-p.vx*.03,p.y-p.vy*.03,p.sz*.8,0,7);fxX.fill();fxX.globalCompositeOperation='source-over';}
+      else if(p.k==='f'){const a=p.life/p.max;fxX.globalCompositeOperation='lighter';const g=fxX.createRadialGradient(p.x,p.y,0,p.x,p.y,p.sz);g.addColorStop(0,'rgba(255,245,210,'+a+')');g.addColorStop(1,'rgba(255,200,80,0)');fxX.fillStyle=g;fxX.globalAlpha=1;fxX.fillRect(p.x-p.sz,p.y-p.sz,p.sz*2,p.sz*2);fxX.globalCompositeOperation='source-over';}
+      else{p.vy=Math.min(p.vy+r.height*.12*dt,r.height*.22);p.x+=(p.vx+Math.sin(p.ph+=dt*4)*r.width*.06)*dt;p.y+=p.vy*dt;p.rot+=p.vr*dt;
+        fxX.globalAlpha=Math.min(1,p.life*1.5);fxX.save();fxX.translate(p.x,p.y);fxX.rotate(p.rot);fxX.scale(1,Math.abs(Math.cos(p.rot*1.7))+.15);fxX.fillStyle=p.c;fxX.fillRect(-p.sz,-p.sz*.5,p.sz*2,p.sz);fxX.restore();}
+      return p.y<r.height+20;});
+    fxX.globalAlpha=1;
+    if(fxP.length)fxRaf=requestAnimationFrame(f);else{fxRaf=0;fxX.clearRect(0,0,r.width,r.height);}})(t0);}
+const FW_COLS=[['#ffd36a','#fff1b8','#ffffff'],['#ff8fb8','#ffd1e3','#ffffff'],['#8fd3ff','#e3f5ff','#ffffff'],['#ffb36a','#ffe0a8','#fff6e0']];
+function firework(xf,yf,big){const r=stage.getBoundingClientRect(),x=r.width*xf,y=r.height*yf,cols=pick(FW_COLS),n=big?90:60,sp=r.width*(big?.42:.34);
+  fxP.push({k:'f',x,y,life:.35,max:.35,sz:r.width*(big?.22:.16)});
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=sp*(.35+Math.random()*.65);fxP.push({k:'s',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1.2+Math.random()*.8,max:2,sz:r.width*(.008+Math.random()*.008),c:pick(cols)});}
+  boom(big);fxRun();}
+function confetti(n,spread){const r=stage.getBoundingClientRect(),cols=['#ffd36a','#ff8fb8','#8fd3ff','#b8f28f','#ffffff','#ffb36a','#c9a2ff'];
+  for(let i=0;i<n;i++){fxP.push({k:'c',x:r.width*Math.random(),y:-r.height*Math.random()*spread,vx:(Math.random()-.5)*r.width*.08,vy:r.height*(.05+Math.random()*.06),rot:Math.random()*6,vr:(Math.random()-.5)*8,ph:Math.random()*6,life:6,sz:r.width*(.008+Math.random()*.008),c:pick(cols)});}
+  fxRun();}
+function fxLater(ms,f){fxTimers.push(setTimeout(f,ms));}
+function fxClear(){fxTimers.forEach(clearTimeout);fxTimers=[];fxP=[];if(fxRaf){cancelAnimationFrame(fxRaf);fxRaf=0;}const r=stage.getBoundingClientRect();fxX.clearRect(0,0,r.width,r.height);
+  suspOff();unduck();dimOff();cheerStop();}
+function dimOn(l){const sr=stage.getBoundingClientRect(),pr=$('printer').getBoundingClientRect(),d=$('dim');
+  d.style.setProperty('--sx',((pr.left+pr.width/2-sr.left)/sr.width*100).toFixed(1)+'%');d.style.setProperty('--sy',((pr.top+pr.height*.55-sr.top)/sr.height*100).toFixed(1)+'%');
+  d.classList.toggle('l2',l===2);d.classList.toggle('l3',l===3);}
+function dimOff(){$('dim').classList.remove('l2','l3');}
+/* sounds: tones only (the owner rejected hiss) */
+function tone(f0,f1,type,at,len,vol,dest){const a=ac();if(!a||!sound)return null;const t=a.currentTime+at,o=a.createOscillator(),g=a.createGain();o.type=type;
+  o.frequency.setValueAtTime(f0,t);if(f1&&f1!==f0)o.frequency.exponentialRampToValueAtTime(f1,t+len*.9);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+Math.min(.02,len/4));g.gain.exponentialRampToValueAtTime(.0008,t+len);o.connect(g);g.connect(dest||a.destination);o.start(t);o.stop(t+len+.05);return o;}
+function boom(big){tone(big?150:190,38,'sine',0,big?.9:.7,big?.55:.4);tone(big?75:95,30,'sine',0,big?1.1:.8,.35);
+  for(let i=0;i<(big?7:5);i++)tone(1800+Math.random()*2600,0,'sine',.25+Math.random()*.6,.12,.035);}
+function timpani(at){tone(98,62,'sine',at,1.4,.5);tone(196,124,'triangle',at,.5,.12);}
+function tada(){[[523,0],[659,.07],[784,.14],[1047,.21]].forEach(([f,t])=>tone(f,0,'triangle',t,1.1,.11));tone(262,0,'sine',.21,1.2,.16);}
+const bigFanfare=()=>{[[392,0,.25],[392,.18,.2],[523,.36,.35],[659,.62,.3],[784,.86,1.3]].forEach(([f,t,l])=>{tone(f,0,'sawtooth',t,l,.05);tone(f,0,'triangle',t,l,.12);tone(f*2,0,'sine',t,l,.04);});
+  [[262,.86],[330,.86],[392,.86]].forEach(([f,t])=>tone(f,0,'triangle',t,1.6,.08));timpani(0);timpani(.86);};
+let suspN=null;
+function suspense(ms){suspOff();const a=ac();if(!a||!sound)return;const t=a.currentTime,g=a.createGain(),lp=a.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(500,t);lp.frequency.linearRampToValueAtTime(2200,t+ms/1000);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.14,t+ms/1000);g.connect(lp);lp.connect(a.destination);
+  const os=[110,164.8,220].map((f,i)=>{const o=a.createOscillator();o.type=i===1?'sawtooth':'triangle';o.frequency.setValueAtTime(f,t);o.frequency.linearRampToValueAtTime(f*1.122,t+ms/1000);o.connect(g);o.start(t);return o;});
+  /* a soft heartbeat on the beat, faster towards the end */
+  let at=0,step=.5;while(at<ms/1000-.2){tone(70,45,'sine',at,.25,.28);at+=step;step=Math.max(.22,step*.9);}
+  suspN={g,os,end:t+ms/1000};}
+function suspOff(){if(!suspN)return;const a=AC,{g,os}=suspN;suspN=null;try{const t=a.currentTime;g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(g.gain.value,t);g.gain.linearRampToValueAtTime(0,t+.15);os.forEach(o=>o.stop(t+.2));}catch(_){}}
+let duckT=0;
+function duck(ms){if(!mBus)return;clearTimeout(duckT);mBus.g.gain.setTargetAtTime(Math.pow(MUS.vol/100,2)*.9*.25,mBus.a.currentTime,.15);duckT=setTimeout(unduck,ms);}
+function unduck(){clearTimeout(duckT);duckT=0;setVol();}
+function bigShow(){   /* 1000+: fireworks one after another, confetti rain, fanfare with timpani */
+  duck(8000);bigFanfare();fxLater(350,()=>cheer('c3',.75));confetti(150,1.2);
+  [[.5,.13,0],[.14,.26,450],[.86,.22,900],[.22,.14,1450],[.8,.15,2000],[.12,.4,2550],[.88,.42,3100],[.5,.12,3700]].forEach(([x,y,t])=>fxLater(t,()=>firework(x,y,true)));}
+function midShow(){   /* 100+: one firework, a shower of confetti, ta-da */
+  duck(4200);tada();chime();fxLater(150,()=>cheer('c2',.6));confetti(70,.6);fxLater(200,()=>firework(.16,.24,false));fxLater(800,()=>firework(.84,.2,false));}
+
 /* ---------- queue + printing ---------- */
 const queue=[];let busy=false,nowName='',cur=null,last=null;const hist=[];
 function updQ(){$('qlab').textContent=tr('Очередь','Queue');$('qn').textContent=queue.length;$('qnow').textContent=nowName?('🖨 '+nowName):' ';}
@@ -494,7 +568,7 @@ let thTO;
 const TEMO=['🎁','🎁','💎','👑'];   /* thanks line: an emoji by level, never the gift itself or its price */
 function thanks(j){const t=$('thanks');
   t.textContent=(j.tier===3?'🏆 ':'')+tr('Спасибо, ','Thank you, ')+j.name+'! '+TEMO[j.tier]+(j.count>1?' ×'+j.count:'');
-  t.className='show'+(j.tier>=2?' gold':'');clearTimeout(thTO);thTO=setTimeout(()=>t.className=t.className.replace('show',''),3600);}
+  t.className='show'+(j.tier>=2?' gold':'')+(j.tier===3?' big':'');clearTimeout(thTO);thTO=setTimeout(()=>t.className='',j.tier===3?7500:3600);}
 function sparks(x0,y0,n,cols){const r=stage.getBoundingClientRect();for(let i=0;i<n;i++){const s=document.createElement('div');s.className='spark';s.style.background=pick(cols);
   s.style.left=x0+'px';s.style.top=y0+'px';stage.appendChild(s);const a=Math.random()*Math.PI*2,d=(.15+Math.random()*.4)*r.width;
   s.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:'translate('+Math.cos(a)*d+'px,'+(Math.sin(a)*d+r.width*.15)+'px) scale(.3)',opacity:0}],{duration:900+Math.random()*900,easing:'cubic-bezier(.2,.7,.3,1)'}).onfinish=()=>s.remove();}}
@@ -516,7 +590,7 @@ function clearPrint(c){clearInterval(c.sw);if(buzzOff){buzzOff();buzzOff=null;}
   const feed=$('feed'),sc=$('sc');feed.classList.remove('has');feed.innerHTML='';feed.style.height='0px';$('prw').classList.remove('busy');
   try{sc.getAnimations().forEach(a=>a.cancel());}catch(_){}sc.style.opacity='0';sc.classList.remove('shut');
   if(c.fly){c.fly.remove();c.fly=null;}
-  $('flash').classList.remove('go');stage.querySelectorAll('.spark').forEach(e=>e.remove());
+  $('flash').classList.remove('go');stage.querySelectorAll('.spark').forEach(e=>e.remove());fxClear();
   clearTimeout(thTO);$('thanks').className='';
   if(c.undo){const u=c.undo;c.undo=null;u();}}
 function done1(rec){last=rec;hist.push(rec);if(hist.length>60)hist.shift();}
@@ -542,6 +616,7 @@ async function printJob(j,c){
   feed.innerHTML='';feed.style.height='0px';feed.appendChild(paper);feed.classList.add('has');
   const H=Math.round(feed.clientWidth*paper.height/paper.width);
   thanks(j);
+  if(j.tier>=2)dimOn(j.tier);if(j.tier===3)suspense(dur);   /* 100+: the room goes darker while it prints (1000+: dark, with rising music) */
   prw.classList.add('busy');buzz(dur);
   await c.w(animH(feed,H,dur,c));
   prw.classList.remove('busy');
@@ -562,9 +637,9 @@ async function printJob(j,c){
   stage.appendChild(fly);feed.classList.remove('has');feed.innerHTML='';feed.style.height='0px';
   const TT=(dx,dy,r,s)=>'translate('+dx+'px,'+dy+'px) rotate('+r+'deg) scale('+s+')';
   const bigW=[.46,.52,.58,.64][j.tier],big=Math.min(sr.width*bigW,sr.height*.44/ar),s1=big/w0,dx1=sr.width/2-cx0,dy1=sr.height*.4-cy0;
-  if(j.tier===3){const f=$('flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');fanfare();}
+  if(j.tier===3){const f=$('flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');}   /* its sound is bigFanfare() at the reveal */
   await c.w(fly.animate([{transform:TT(0,0,-6.42,1)},{transform:TT(dx1,dy1,2,s1)}],{duration:650,easing:'cubic-bezier(.3,.8,.3,1)',fill:'forwards'}).finished);
-  if(j.tier===2)chime();
+  if(j.tier===3){suspOff();bigShow();}else if(j.tier===2)midShow();
   if(j.tier>=2)sparks(sr.width/2,sr.height*.4,j.tier===3?110:36,['#ffd36a','#fff1b8','#ffffff','#ffb3cf']);
   if(j.tier===3)setTimeout(()=>{if(!c.dead)sparks(sr.width/2,sr.height*.4,70,['#ffd36a','#fff1b8','#ffe08a']);},900);
   await c.w(fly.animate([{transform:TT(dx1,dy1,2,s1)},{transform:TT(dx1,dy1,-2,s1*1.03)}],{duration:show,easing:'ease-in-out',fill:'forwards'}).finished);
@@ -584,6 +659,7 @@ async function printJob(j,c){
     renderGarland(true);target=SL[0].querySelector('img');rot=SLOTS[0].r;
     done=()=>{SL[0].style.visibility='visible';SL[0].classList.add('swing');};
   }
+  dimOff();
   const tg=target.getBoundingClientRect(),s2=target.offsetWidth/w0,dx2=tg.left-sr.left+tg.width/2-cx0,dy2=tg.top-sr.top+tg.height/2-cy0;
   await c.w(fly.animate([{transform:TT(dx1,dy1,-2,s1*1.03)},{transform:TT(dx2,dy2,rot,s2)}],{duration:800,easing:'cubic-bezier(.45,.05,.3,1)',fill:'forwards'}).finished);
   fly.remove();c.fly=null;done();c.undo=null;c.placed=true;   /* from here ⏭ treats it as the newest sticker on the string / in the frame */

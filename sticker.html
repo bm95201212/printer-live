@@ -447,10 +447,15 @@ function drawSlip(name){
 let AC=null,sound=true,buzzOff=null;
 function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(_){}}if(AC&&AC.state==='suspended')AC.resume();return AC;}
 /* real recordings from Pixabay (uploader: freesound_community; Pixabay Content License), cut for this game: a seamless thermal-printer loop and three scissor snips */
-const SFX_SRC={pr:'snd/sticker/printer_loop.wav',s:['snd/sticker/snip0.wav','snd/sticker/snip1.wav','snd/sticker/snip2.wav']};const SFX={pr:null,s:[]};let sfxLoading=false;
+const SFX_SRC={pr:'snd/sticker/printer_loop.wav',s:['snd/sticker/snip0.wav','snd/sticker/snip1.wav','snd/sticker/snip2.wav'],c2:'snd/sticker/cheer_mid.mp3',c3:'snd/sticker/cheer_big.mp3'};const SFX={pr:null,s:[],c2:null,c3:null};   /* cheers: Pixabay (driken5482, dragon-studio), Pixabay Content License */let sfxLoading=false;
 function sfxLoad(){const a=AC;if(!a||sfxLoading)return;sfxLoading=true;
   const dec=u=>fetch(u).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();}).then(b=>new Promise((res,rej)=>a.decodeAudioData(b,res,rej)));
-  dec(SFX_SRC.pr).then(b=>SFX.pr=b).catch(()=>{});SFX_SRC.s.forEach(u=>dec(u).then(b=>SFX.s.push(b)).catch(()=>{}));}
+  dec(SFX_SRC.pr).then(b=>SFX.pr=b).catch(()=>{});SFX_SRC.s.forEach(u=>dec(u).then(b=>SFX.s.push(b)).catch(()=>{}));
+  dec(SFX_SRC.c2).then(b=>SFX.c2=b).catch(()=>{});dec(SFX_SRC.c3).then(b=>SFX.c3=b).catch(()=>{});}
+/* a recorded cheer (one at a time; ⏭ stops it) */
+let cheerSrc=null;
+function cheer(k,vol){const a=ac();if(!a||!sound||!SFX[k])return;cheerStop();const src=a.createBufferSource(),g=a.createGain();src.buffer=SFX[k];g.gain.value=vol;src.connect(g);g.connect(a.destination);src.start();cheerSrc=src;src.onended=()=>{if(cheerSrc===src)cheerSrc=null;};}
+function cheerStop(){if(cheerSrc){try{cheerSrc.stop();}catch(_){}cheerSrc=null;}}
 function buzz(ms){const a=ac();if(!a||!sound)return;sfxLoad();
   if(SFX.pr){const t=a.currentTime,src=a.createBufferSource(),g=a.createGain();src.buffer=SFX.pr;src.loop=true;src.playbackRate.value=.97+Math.random()*.06;
     g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.55,t+.03);g.gain.setValueAtTime(.55,t+ms/1000-.08);g.gain.linearRampToValueAtTime(0,t+ms/1000);
@@ -524,7 +529,7 @@ function confetti(n,spread){const r=stage.getBoundingClientRect(),cols=['#ffd36a
   fxRun();}
 function fxLater(ms,f){fxTimers.push(setTimeout(f,ms));}
 function fxClear(){fxTimers.forEach(clearTimeout);fxTimers=[];fxP=[];if(fxRaf){cancelAnimationFrame(fxRaf);fxRaf=0;}const r=stage.getBoundingClientRect();fxX.clearRect(0,0,r.width,r.height);
-  suspOff();unduck();dimOff();}
+  suspOff();unduck();dimOff();cheerStop();}
 function dimOn(l){const sr=stage.getBoundingClientRect(),pr=$('printer').getBoundingClientRect(),d=$('dim');
   d.style.setProperty('--sx',((pr.left+pr.width/2-sr.left)/sr.width*100).toFixed(1)+'%');d.style.setProperty('--sy',((pr.top+pr.height*.55-sr.top)/sr.height*100).toFixed(1)+'%');
   d.classList.toggle('l2',l===2);d.classList.toggle('l3',l===3);}
@@ -551,10 +556,10 @@ let duckT=0;
 function duck(ms){if(!mBus)return;clearTimeout(duckT);mBus.g.gain.setTargetAtTime(Math.pow(MUS.vol/100,2)*.9*.25,mBus.a.currentTime,.15);duckT=setTimeout(unduck,ms);}
 function unduck(){clearTimeout(duckT);duckT=0;setVol();}
 function bigShow(){   /* 1000+: fireworks one after another, confetti rain, fanfare with timpani */
-  duck(7000);bigFanfare();confetti(150,1.2);
+  duck(8000);bigFanfare();fxLater(350,()=>cheer('c3',.75));confetti(150,1.2);
   [[.5,.13,0],[.14,.26,450],[.86,.22,900],[.22,.14,1450],[.8,.15,2000],[.12,.4,2550],[.88,.42,3100],[.5,.12,3700]].forEach(([x,y,t])=>fxLater(t,()=>firework(x,y,true)));}
 function midShow(){   /* 100+: one firework, a shower of confetti, ta-da */
-  duck(3500);tada();chime();confetti(70,.6);fxLater(200,()=>firework(.16,.24,false));fxLater(800,()=>firework(.84,.2,false));}
+  duck(4200);tada();chime();fxLater(150,()=>cheer('c2',.6));confetti(70,.6);fxLater(200,()=>firework(.16,.24,false));fxLater(800,()=>firework(.84,.2,false));}
 
 /* ---------- queue + printing ---------- */
 const queue=[];let busy=false,nowName='',cur=null,last=null;const hist=[];

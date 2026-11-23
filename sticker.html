@@ -629,7 +629,7 @@ $('skip').addEventListener('click',skip);
 /* chat: only the fixed command is recognised; viewer text is never printed or shown. One slip per viewer (user id) in 5 minutes. */
 const lastWish=new Map();const WISH_GAP=5*60*1000;
 function chatMsg(v,text){
-  if(!/^\s*!(тілек|тилек|пожелание|wish)(\s|$)/i.test(text))return false;
+  if(!/^\s*!?\s*(тілек|тилек|пожелание|wish)(\s|[!.,]|$)/i.test(text))return false;   /* the «!» is optional: many viewers forget it */
   const now=Date.now(),was=lastWish.get(v.id);if(was&&now-was<WISH_GAP)return false;
   if(queue.filter(q=>q.slip).length>=6)return false;
   if(lastWish.size>2000)lastWish.forEach((t,k)=>{if(now-t>=WISH_GAP)lastWish.delete(k);});
@@ -653,7 +653,7 @@ function receipt(name,kind,silent){rNo++;const d=document.createElement('div');d
 /* the hint shrinks its font until the whole text fits on one line */
 function fitHint(){const h=$('hint');h.style.fontSize='';let fs=parseFloat(getComputedStyle(h).fontSize);for(let i=0;i<40&&h.scrollWidth>h.clientWidth+.5&&fs>7;i++){fs-=.4;h.style.fontSize=fs+'px';}}
 let hintI=0;
-function hintText(){const H=[tr('🖨 Здесь печатаются фото зрителей',"🖨 Viewers' photos get printed here"),tr('✍️ Напиши в чат !тілек — напечатаю пожелание','✍️ Type !wish in chat — I will print you a wish')];return H[hintI%H.length];}
+function hintText(){const H=[tr('🖨 Здесь печатаются фото зрителей',"🖨 Viewers' photos get printed here"),tr('✍️ Напиши в чат !пожелание — получишь его на бумаге','✍️ Type !wish in chat — I will print you a wish')];return H[hintI%H.length];}
 setInterval(()=>{if(!sleeping)return;const h=$('hint');h.style.opacity='0';setTimeout(()=>{hintI++;h.textContent=hintText();fitHint();h.style.opacity='';},500);},4500);
 
 
